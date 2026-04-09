@@ -337,7 +337,7 @@ async function processCheckIn() {
     // پشکنین بۆ ئەوەی دڵنیابین کە بەکارهێنەر پێشتر هاتنی تۆمار نەکردووە و دەرنەچووە
     const { data: activeCheckIn, error: activeCheckInError } = await client
         .from('attendance')
-        .select('id')
+        .select('*')
         .eq('user_id', currentUser.id)
         .is('check_out_time', null)
         .limit(1);
