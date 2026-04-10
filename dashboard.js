@@ -32,14 +32,48 @@ function getTodayBounds() {
     };
 }
 
-// --- ئامادەکردنی ئایدی ئامێر (Device Fingerprint) ---
-function getDeviceID() {
-    let id = localStorage.getItem('device_id');
-    if (!id) {
-        id = 'dev-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
-        localStorage.setItem('device_id', id);
+// --- دروستکردنی پەنجەمۆری ڕەقەکاڵا (Hardware Fingerprint) ---
+function getHardwareFingerprint() {
+    // ١. کۆکردنەوەی سیفاتە فیزیکییەکانی ئامێر
+    const hardwareFeatures = [
+        navigator.userAgent,
+        screen.width + "x" + screen.height,
+        new Date().getTimezoneOffset(),
+        navigator.hardwareConcurrency || '8',
+        navigator.platform
+    ].join('|');
+
+    let hash = 0;
+    for (let i = 0; i < hardwareFeatures.length; i++) {
+        hash = ((hash << 5) - hash) + hardwareFeatures.charCodeAt(i);
+        hash |= 0;
     }
-    return id;
+    
+return 'hw-' + Math.abs(hash).toString(36);
+}
+
+// --- بەڕێوەبردنی ئایدی ئامێر (Smart Device Manager) ---
+function getDeviceID() {
+    const fingerprint = getHardwareFingerprint();
+
+    let storedID = localStorage.getItem('device_id');
+    // ئەگەر لە ناو LocalStorage هەبوو، هەر ئەوە دەگەڕێنینەوە
+    if (storedID && storedID.startsWith(fingerprint)) {
+        return storedID;
+    }
+
+    // ئەگەر نەبوو یان تێكچووبوو، جارێ تەنها پەنجەمۆرەکە دەگەڕێنینەوە
+    // لە DOMContentLoaded دووبارە پشکنینی بۆ دەکەینەوە
+    return storedID || fingerprint;
+}
+
+// دروستکردنی ئایدی نوێ بۆ یەکەمجار
+function generateNewFullID() {
+    const fingerprint = getHardwareFingerprint();
+    const newID = fingerprint + '-' + Math.random().toString(36).substr(2, 5);
+    localStorage.setItem('device_id', newID);
+    return newID;
+
 }
 
 // ئەژمارکردنی دووری نێوان دوو خاڵ بە مەتر (Haversine Formula)
@@ -569,23 +603,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (roleLabel) roleLabel.innerText = roleDisplay;
 
-        // ئەگەر ئامێری تۆمارنەکراوە، یەکەم ئامێر جێگیر بکە
-        const currentDev = getDeviceID();
+        const hardwareFP = getHardwareFingerprint();
+        let currentDev = getDeviceID();
         if (!profile.device_id) {
-            const { error: updateError } = await client
+            // حاڵەتی ١: یەکەمجارە ئامێر تۆمار دەکات
+            currentDev = generateNewFullID();
+            await client
                 .from('profiles')
                 .update({ device_id: currentDev })
                 .eq('id', user.id);
-            
-            if (updateError) {
-                // ئەگەر ئامێرەکە پێشتر لای کەسێکی تر تۆمار کرابوو
-                isDeviceVerified = false;
-            } else {
-                userProfile.device_id = currentDev;
-                isDeviceVerified = true;
-            }
+             isDeviceVerified = true;
+        } else if (profile.device_id.startsWith(hardwareFP)) {
+            // حاڵەتی ٢: Smart Recovery
+            // ئەگەر پەنجەمۆری ڕەقەکاڵاکە وەک یەک بوو، ئایدییە تەواوەکە دەگەڕێنینەوە بۆ مۆبایلەکە
+            localStorage.setItem('device_id', profile.device_id);
+            currentDev = profile.device_id;
+            isDeviceVerified = true;
         } else {
-            isDeviceVerified = profile.device_id === currentDev;
+            // حاڵەتی ٣: ئامێرەکە جیاوازە و هی کەسێکی ترە
+            isDeviceVerified = false;
         }
         
         updateVerifyUI('device', isDeviceVerified, null, isDeviceVerified ? translations[currentLang].verified : translations[currentLang].deviceTaken);
