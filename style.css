@@ -52,7 +52,7 @@ body {
     justify-content: space-between;
     padding: 15px 20px;
     z-index: 100;
-    background: var(--bg-color);
+    background: transparent;
 }
 
 .theme-toggle-btn, .icon-btn {
