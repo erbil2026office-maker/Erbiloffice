@@ -118,6 +118,15 @@
                     <div id="detailIn" class="detail-text"></div>
                     <div id="detailOut" class="detail-text"></div>
                 </div>
+                
+                <div id="justificationSection" class="justification-area">
+                    <label data-i18n="justification">ڕوونکردنەوە</label>
+                    <textarea id="justificationInput" class="justification-input"></textarea>
+                    <button id="saveJustBtn" class="login-btn" style="padding: 10px; font-size: 0.85rem;" onclick="submitJustification()">
+                        <i class="fas fa-paper-plane"></i> <span data-i18n="saveJustification">ناردنی ڕوونکردنەوە</span>
+                    </button>
+                </div>
+
                 <button onclick="document.getElementById('dayDetails').style.display='none'" class="login-btn" style="margin-top: 15px;">
                     <span data-i18n="close">داخستن</span>
                 </button>

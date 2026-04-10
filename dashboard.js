@@ -11,6 +11,7 @@ let attemptTimer = null;
 let currentUser = null;
 let userProfile = null; // پاشەکەوتکردنی زانیاری پڕۆفایل و بنکە
 let isDeviceVerified = false; // بۆ پشکنینی دۆخی ئامێرەکە بە گشتی
+let currentDetailDate = null; // بۆ هەڵگرتنی ڕێکەوتی ئەو ڕۆژەی کلیکی لێکراوە
 
 // فەنکشن بۆ دیاریکردنی سەرەتا و کۆتایی ڕۆژی ئێستا
 function getTodayBounds() {
@@ -733,8 +734,13 @@ function renderCalendar() {
 }
 
 function showDayDetails(record, dateStr) {
+    currentDetailDate = dateStr;
     const modal = document.getElementById('dayDetails');
+    const input = document.getElementById('justificationInput');
+    const saveBtn = document.getElementById('saveJustBtn');
+
      document.getElementById('detailDate').innerText = translations[currentLang].date + " " + dateStr;
+     input.value = ""; // پاککردنەوەی پێشوو
     
     if (record) {
         document.getElementById('detailIn').style.display = 'flex';
@@ -748,7 +754,50 @@ function showDayDetails(record, dateStr) {
             ${translations[currentLang].recordNotFound}
         </div>`;
     }
+
+    // هێنانی ڕوونکردنەوە ئەگەر پێشتر نێردرابێت
+    fetchJustification(dateStr);
+
     modal.style.display = 'flex';  // دڵنیابوونەوە لە بەکارهێنانی flex بۆ ناوەندکردنی تەواو
+}
+
+async function fetchJustification(dateStr) {
+    const input = document.getElementById('justificationInput');
+    const saveBtn = document.getElementById('saveJustBtn');
+    const { data } = await client
+        .from('justifications')
+        .select('reason')
+        .eq('user_id', currentUser.id)
+        .eq('date', dateStr)
+        .maybeSingle();
+    
+    if (data && data.reason) {
+        input.value = data.reason;
+        saveBtn.classList.add('btn-justification-edit');
+        saveBtn.innerHTML = `<i class="fas fa-edit"></i> <span>${translations[currentLang].editJustification}</span>`;
+    } else {
+        input.value = "";
+        saveBtn.classList.remove('btn-justification-edit');
+        saveBtn.innerHTML = `<i class="fas fa-paper-plane"></i> <span>${translations[currentLang].saveJustification}</span>`;
+    }
+    
+    input.placeholder = translations[currentLang].justificationPlaceholder;
+}
+
+async function submitJustification() {
+    const reason = document.getElementById('justificationInput').value.trim();
+    const saveBtn = document.getElementById('saveJustBtn');
+    if (!reason) return;
+
+    const { error } = await client
+        .from('justifications')
+        .upsert({ user_id: currentUser.id, date: currentDetailDate, reason: reason }, { onConflict: 'user_id,date' });
+
+    if (!error) {
+        updateStatus(translations[currentLang].justificationSuccess, 'success');
+        saveBtn.classList.add('btn-justification-edit');
+        saveBtn.innerHTML = `<i class="fas fa-edit"></i> <span>${translations[currentLang].editJustification}</span>`;
+    }
 }
 
 function closeModal(event) {

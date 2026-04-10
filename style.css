@@ -358,6 +358,48 @@ input:focus + .input-icon { color: var(--accent-pink); }
     gap: 12px;
 }
 
+.justification-area {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--border-color);
+    text-align: right;
+}
+
+.justification-area label {
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    display: block;
+    color: var(--text-sub);
+    font-weight: 700;
+}
+
+.justification-input {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-main);
+    font-size: 0.85rem;
+    resize: none;
+    margin-bottom: 10px;
+    outline: none;
+    transition: var(--transition);
+}
+
+.btn-justification-edit {
+    background: rgba(0, 98, 255, 0.1) !important;
+    color: var(--primary) !important;
+    border: 1px solid var(--primary) !important;
+    box-shadow: none !important;
+}
+
+.justification-input:focus {
+    border-color: var(--primary);
+    background: var(--card-bg);
+}
+
 .detail-text b {
     direction: ltr;
     display: inline-block;

@@ -68,7 +68,12 @@ const translations = {
         pwaTitle: "دابەزاندنی ئەپ",
         pwaDesc: "بۆ ئەزموونێکی باشتر و خێراتر، ئەپەکە بخەرە سەر شاشەی سەرەکی.",
         pwaInstall: "دابەزاندن",
-        pwaIOSMsg: "کلیک لە 'Share' بکە و پاشان 'Add to Home Screen' هەڵبژێرە."
+        pwaIOSMsg: "کلیک لە 'Share' بکە و پاشان 'Add to Home Screen' هەڵبژێرە.",
+        justification: "ڕوونکردنەوەی فەرمی",
+        saveJustification: "ناردنی ڕوونکردنەوە",
+        editJustification: "دەستکاریکردنی ڕوونکردنەوە",
+        justificationPlaceholder: "هۆکاری درەنگ هاتن یان نەهاتن لێرە بنووسە...",
+        justificationSuccess: "ڕوونکردنەوەکەت بە سەرکەوتوویی تۆمار کرا."
     },
     ar: {
         title: "IHEC Erbil Office",
@@ -137,7 +142,12 @@ const translations = {
         pwaTitle: "تثبيت التطبيق",
         pwaDesc: "للحصول على تجربة أفضل وأسرع، قم بتثبيت التطبيق على شاشتك الرئيسية.",
         pwaInstall: "تثبيت",
-        pwaIOSMsg: "اضغط على 'Share' ثم اختر 'Add to Home Screen'."
+        pwaIOSMsg: "اضغط على 'Share' ثم اختر 'Add to Home Screen'.",
+        justification: "تبرير رسمي",
+        saveJustification: "إرسال التبرير",
+        editJustification: "تعديل التبرير",
+        justificationPlaceholder: "اكتب سبب التأخير أو الغياب هنا...",
+        justificationSuccess: "تم تسجيل التبرير بنجاح."
     }
 };
 
