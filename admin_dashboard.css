@@ -267,10 +267,22 @@
     line-height: normal;
 }
 
-/* ڕێکخستنی ناوەوەی خانەی ڕێککەوت بۆ ناوەندکردنی تێکستەکە */
+/* ڕێکخستنی خانەی ڕێککەوت بۆ ئەوەی ئایکۆنەکە بکەوێتە لای ڕاست و تێکستەکە پڕی بکاتەوە */
+.glass-input[type="date"] {
+    display: flex !important;
+    flex-direction: row !important; 
+    align-items: left !important;
+    justify-content: space-between !important; /* دروستکردنی مەودا لە نێوان تێکست و ئایکۆن */
+    gap: 10px;
+    padding: 0 12px !important;
+}
+
 .glass-input[type="date"]::-webkit-datetime-edit {
+    flex: 1;
     display: flex;
     align-items: center;
+    justify-content: flex-end; /* بردنی تێکستەکە بۆ لای چەپ لە سیستەمی RTL */
+    text-align: left; /* دڵنیابوونەوە لە لایەنگیری تێکستەکە */
     padding: 0;
     height: 100%;
 }
@@ -324,6 +336,7 @@
 input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     filter: invert(0.4) sepia(1) saturate(5) hue-rotate(190deg); /* شینێکی گونجاو */
+    order: -1; /* جێگیرکردنی ئایکۆنەکە لە سەرەتا (لای ڕاست لە RTL) */
     transition: transform 0.3s ease;
     margin: 0;
     padding: 0;

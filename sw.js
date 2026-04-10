@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ihec-inout-v1.1.6';
+const CACHE_NAME = 'ihec-inout-v1.1.7';
 const ASSETS = [
   '/',
   '/index.html',
@@ -7,7 +7,12 @@ const ASSETS = [
   '/script.js',
   '/dashboard.js',
   '/lang.js',
+  '/admin_dashboard.html',
+  '/admin_dashboard.css',
+  '/admin_dashboard.js',
+  '/version.json',
   '/assets/icon.png'
+  
 ];
 
 self.addEventListener('install', (e) => {
