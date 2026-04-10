@@ -17,8 +17,8 @@
         <header class="admin-header">
             <div class="header-titles">
                 <div class="admin-badge">Management System</div>
-                <h1>پانێڵی بەڕێوەبەر</h1>
-                <p id="adminStatus">چاودێری گشتی ئۆفیسی هەولێر</p>
+                <h1 data-i18n="adminDashboardTitle">پانێڵی بەڕێوەبەر</h1>
+                <p id="adminStatus" data-i18n="generalOffice">چاودێری گشتی ئۆفیسی هەولێر</p>
             </div>
             <div class="header-side-content">
                 <div class="admin-logo-wrapper">
@@ -33,7 +33,7 @@
 
         <!-- Admins Section -->
         <div id="adminsSection" class="admins-display-area" style="display: none;">
-            <span class="admins-label"><i class="fas fa-user-shield"></i> بەڕێوەبەرانی سیستم:</span>
+            <span class="admins-label"><i class="fas fa-user-shield"></i> <span data-i18n="adminLabel">بەڕێوەبەرانی سیستم:</span></span>
             <div id="adminsList" class="admins-chips-container">
                 <!-- Admin names will be injected here -->
             </div>
@@ -44,21 +44,21 @@
             <div class="stat-card stat-green">
                 <i class="fas fa-user-check"></i>
                 <div class="stat-info">
-                    <span class="stat-label">پێش 8:30 (هاتن)</span>
+                    <span class="stat-label" data-i18n="earlyIn">پێش 8:30 (هاتن)</span>
                     <span class="stat-value" id="countEarlyIn">0</span>
                 </div>
             </div>
             <div class="stat-card stat-yellow">
                 <i class="fas fa-user-clock"></i>
                 <div class="stat-info">
-                    <span class="stat-label">8:30 - 9:00 (هاتن)</span>
+                    <span class="stat-label" data-i18n="midIn">8:30 - 9:00 (هاتن)</span>
                     <span class="stat-value" id="countLateIn">0</span>
                 </div>
             </div>
             <div class="stat-card stat-orange">
                 <i class="fas fa-user-clock"></i>
                 <div class="stat-info">
-                    <span class="stat-label">دوای 9:00 (هاتن)</span>
+                    <span class="stat-label" data-i18n="veryLateInAdmin">دوای 9:00 (هاتن)</span>
                     <span class="stat-value" id="countVeryLateIn">0</span>
                 </div>
             </div>
@@ -66,35 +66,35 @@
         <div class="stat-card stat-red">
                 <i class="fas fa-user-slash"></i>
                 <div class="stat-info">
-                    <span class="stat-label">نەهاتوو (Absent)</span>
+                    <span class="stat-label" data-i18n="absentStat">نەهاتوو (Absent)</span>
                     <span class="stat-value" id="countAbsent">0</span>
                 </div>
             </div>
             <div class="stat-card stat-red">
                 <i class="fas fa-door-open"></i>
                 <div class="stat-info">
-                    <span class="stat-label">پێش 2:30 (دەرچوون)</span>
+                    <span class="stat-label" data-i18n="earlyOutAdmin">پێش 2:30 (دەرچوون)</span>
                     <span class="stat-value" id="countEarlyOut">0</span>
                 </div>
             </div>
             <div class="stat-card stat-green">
                 <i class="fas fa-walking"></i>
                 <div class="stat-info">
-                    <span class="stat-label">دوای 2:30 (دەرچوون)</span>
+                    <span class="stat-label" data-i18n="onTimeOutAdmin">دوای 2:30 (دەرچوون)</span>
                     <span class="stat-value" id="countOnTimeOut">0</span>
                 </div>
             </div>
             <div class="stat-card stat-yellow">
                 <i class="fas fa-hourglass-half"></i>
                 <div class="stat-info">
-                    <span class="stat-label">دەرنەچوو (No Exit)</span>
+                    <span class="stat-label" data-i18n="noExitStat">دەرنەچوو (No Exit)</span>
                     <span class="stat-value" id="countNotCheckedOut">0</span>
                 </div>
             </div>
             <div class="stat-card stat-blue">
                 <i class="fas fa-file-signature"></i>
                 <div class="stat-info">
-                    <span class="stat-label">ڕوونکردنەوەکان</span>
+                    <span class="stat-label" data-i18n="justification">ڕوونکردنەوەکان</span>
                     <span class="stat-value" id="justificationCount">0</span>
                 </div>
             </div>
@@ -104,48 +104,48 @@
         <section class="filter-section glass-card filter-entrance">
             <div class="filter-grid">
                 <div class="filter-item">
-                    <label><i class="fas fa-search"></i> گەڕان بەپێی ناو</label>
-                    <input type="text" id="nameSearch" class="glass-input" placeholder="ناوی فەرمانبەر بنووسە..." oninput="applyFiltersLocally()">
+                    <label><i class="fas fa-search"></i> <span data-i18n="searchName">گەڕان بەپێی ناو</span></label>
+                    <input type="text" id="nameSearch" class="glass-input" data-i18n="searchPlaceholder" placeholder="ناوی فەرمانبەر بنووسە..." oninput="applyFiltersLocally()">
                 </div>
                 <div class="filter-item">
-                    <label><i class="fas fa-calendar-day"></i> ڕێکەوت</label>
+                    <label><i class="fas fa-calendar-day"></i> <span data-i18n="date">ڕێکەوت</span></label>
                     <input type="date" id="datePicker" class="glass-input" onchange="loadAttendanceData()">
                 </div>
                 <div class="filter-item">
-                    <label><i class="fas fa-building"></i> بنکە</label>
+                    <label><i class="fas fa-building"></i> <span data-i18n="branchLabel">بنکە</span></label>
                     <div class="custom-select" id="branchSelect">
                         <div class="select-trigger" onclick="toggleCustomDropdown('branchSelect')">
-                            <span class="selected-text">هەموو بنکەکان</span>
+                            <span class="selected-text" data-i18n="allBranches">هەموو بنکەکان</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="options-list" id="branchOptions">
-                            <div class="option selected" onclick="selectOption('branchSelect', 'all', 'هەموو بنکەکان', true)">هەموو بنکەکان</div>
+                            <div class="option selected" data-i18n="allBranches" onclick="selectOption('branchSelect', 'all', translations[currentLang].allBranches, true)">هەموو بنکەکان</div>
                         </div>
                     </div>
                 </div>
                 <div class="filter-item">
-                    <label><i class="fas fa-tasks"></i> دۆخی ئامادەبوون</label>
+                    <label><i class="fas fa-tasks"></i> <span data-i18n="statusLabel">دۆخی ئامادەبوون</span></label>
                     <div class="custom-select" id="statusSelect">
                         <div class="select-trigger" onclick="toggleCustomDropdown('statusSelect')">
-                            <span class="selected-text">هەموو دۆخەکان</span>
+                            <span class="selected-text" data-i18n="allStatus">هەموو دۆخەکان</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="options-list">
-                            <div class="option selected" onclick="selectOption('statusSelect', 'all', 'هەموو دۆخەکان')">هەموو دۆخەکان</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'earlyIn', 'هاتن (پێش 8:30)')">هاتن (پێش 8:30)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'lateIn', 'هاتن (8:30 - 9:00)')">هاتن (8:30 - 9:00)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'veryLateIn', 'هاتن (دوای 9:00)')">هاتن (دوای 9:00)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'absent', 'نەهاتوو (Absent)')">نەهاتوو (Absent)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'earlyOut', 'دەرچوون (پێش 2:30)')">دەرچوون (پێش 2:30)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'onTimeOut', 'دەرچوون (دوای 2:30)')">دەرچوون (دوای 2:30)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'noExit', 'دەرنەچوو (No Exit)')">دەرنەچوو (No Exit)</div>
-                            <div class="option" onclick="selectOption('statusSelect', 'justified', 'ڕوونکردنەوەکان')">ڕوونکردنەوەکان</div>
+                            <div class="option selected" data-i18n="allStatus" onclick="selectOption('statusSelect', 'all', translations[currentLang].allStatus)">هەموو دۆخەکان</div>
+                            <div class="option" data-i18n="earlyIn" onclick="selectOption('statusSelect', 'earlyIn', translations[currentLang].earlyIn)">پێش 8:30</div>
+                            <div class="option" data-i18n="midIn" onclick="selectOption('statusSelect', 'lateIn', translations[currentLang].midIn)">8:30 - 9:00</div>
+                            <div class="option" data-i18n="veryLateInAdmin" onclick="selectOption('statusSelect', 'veryLateIn', translations[currentLang].veryLateInAdmin)">دوای 9:00</div>
+                            <div class="option" data-i18n="absentStat" onclick="selectOption('statusSelect', 'absent', translations[currentLang].absentStat)">نەهاتوو</div>
+                            <div class="option" data-i18n="earlyOutAdmin" onclick="selectOption('statusSelect', 'earlyOut', translations[currentLang].earlyOutAdmin)">پێش 2:30</div>
+                            <div class="option" data-i18n="onTimeOutAdmin" onclick="selectOption('statusSelect', 'onTimeOut', translations[currentLang].onTimeOutAdmin)">دوای 2:30</div>
+                            <div class="option" data-i18n="noExitStat" onclick="selectOption('statusSelect', 'noExit', translations[currentLang].noExitStat)">دەرنەچوو</div>
+                            <div class="option" data-i18n="justification" onclick="selectOption('statusSelect', 'justified', translations[currentLang].justification)">ڕوونکردنەوەکان</div>
                         </div>
                     </div>
                 </div>
                 <div class="filter-item filter-actions">
-                    <button class="print-btn" onclick="handlePrint()" title="Print Report">
-                        <i class="fas fa-print"></i> پرێنتکردن
+                    <button class="print-btn" onclick="handlePrint()" title="Print Report" data-i18n="printReport">
+                        <i class="fas fa-print"></i> <span data-i18n="print">پرێنتکردن</span>
                     </button>
                 </div>
             </div>
@@ -153,7 +153,7 @@
 
         <!-- Attendance List -->
         <div class="attendance-container">
-            <h3 class="section-title"><i class="fas fa-list-ul"></i> لیستی ئامادەبووان</h3>
+            <h3 class="section-title"><i class="fas fa-list-ul"></i> <span data-i18n="attendanceListTitle">لیستی ئامادەبووان</span></h3>
             <div id="attendanceList">
                 <!-- Groups of branches will be injected here -->
                 <div class="loading-state">

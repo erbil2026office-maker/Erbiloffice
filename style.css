@@ -392,7 +392,7 @@ input:focus + .input-icon { color: var(--accent-pink); }
 
 .update-body h3, .update-body h4 {
     margin-bottom: 12px;
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     color: var(--text-main);
 }
 
