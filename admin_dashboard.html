@@ -41,22 +41,58 @@
 
         <!-- Stats Overview -->
         <div class="stats-grid">
-            <div class="stat-card">
-                <i class="fas fa-users-check"></i>
+            <div class="stat-card stat-green">
+                <i class="fas fa-user-check"></i>
                 <div class="stat-info">
-                    <span class="stat-label">ئامادەبووان</span>
-                    <span class="stat-value" id="presentCount">0</span>
+                    <span class="stat-label">پێش 8:30 (هاتن)</span>
+                    <span class="stat-value" id="countEarlyIn">0</span>
                 </div>
             </div>
-            <div class="stat-card absent">
+            <div class="stat-card stat-yellow">
                 <i class="fas fa-user-clock"></i>
                 <div class="stat-info">
-                    <span class="stat-label">نەهاتوو/درەنگ</span>
-                    <span class="stat-value" id="absentCount">0</span>
+                    <span class="stat-label">8:30 - 9:00 (هاتن)</span>
+                    <span class="stat-value" id="countLateIn">0</span>
                 </div>
             </div>
-            <div class="stat-card pending">
-                <i class="fas fa-file-invoice"></i>
+            <div class="stat-card stat-red">
+                <i class="fas fa-user-times"></i>
+                <div class="stat-info">
+                    <span class="stat-label">دوای 9:00 (هاتن)</span>
+                    <span class="stat-value" id="countVeryLateIn">0</span>
+                </div>
+            </div>
+
+        <div class="stat-card stat-red">
+                <i class="fas fa-user-slash"></i>
+                <div class="stat-info">
+                    <span class="stat-label">نەهاتوو (Absent)</span>
+                    <span class="stat-value" id="countAbsent">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-red">
+                <i class="fas fa-door-open"></i>
+                <div class="stat-info">
+                    <span class="stat-label">پێش 2:30 (دەرچوون)</span>
+                    <span class="stat-value" id="countEarlyOut">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-green">
+                <i class="fas fa-walking"></i>
+                <div class="stat-info">
+                    <span class="stat-label">دوای 2:30 (دەرچوون)</span>
+                    <span class="stat-value" id="countOnTimeOut">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-yellow">
+                <i class="fas fa-hourglass-half"></i>
+                <div class="stat-info">
+                    <span class="stat-label">دەرنەچوو (No Exit)</span>
+                    <span class="stat-value" id="countNotCheckedOut">0</span>
+                </div>
+            </div>
+            <div class="stat-card stat-blue">
+                <i class="fas fa-user-clock"></i>
                 <div class="stat-info">
                     <span class="stat-label">ڕوونکردنەوەکان</span>
                     <span class="stat-value" id="justificationCount">0</span>

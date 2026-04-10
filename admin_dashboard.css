@@ -93,59 +93,80 @@
     border-color: #ef4444 !important;
 }
 
-@media (max-width: 600px) {
-    .admin-header {
-        flex-direction: column-reverse;
-        text-align: center;
-        padding: 20px;
-        gap: 25px;
-    }
-    .header-side-content {
-        width: 100%;
-        justify-content: center;
-    }
-    .admin-header h1 { font-size: 1.5rem; }
-}
-
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* گەورەکردنی کارتەکان بۆ هاوسەنگی زیاتر */
-    gap: 20px;
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 10px; 
     margin-bottom: 30px;
 }
 
 .stat-card {
-    background: var(--card-bg);
-    padding: 25px;
-    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(15px);
+    padding: 12px 15px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
-    gap: 20px;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     transition: var(--transition);
 }
 
-.stat-card:hover { transform: translateY(-5px); }
-
-.stat-card i { 
-    font-size: 1.8rem; 
-    background: rgba(0, 98, 255, 0.1); /* Default light mode */
-    padding: 15px; 
-    border-radius: 16px;
-    color: var(--primary); 
+[data-theme="dark"] .stat-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.stat-card.absent i { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.stat-card.pending i { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+.stat-card:hover { transform: translateY(-5px);
+         border: 1px solid rgba(28, 109, 230, 0.66);
+         box-shadow: 0 8px 20px rgba(0, 98, 255, 0.15); }
 
-/* Dark mode adjustments for stat icons */
-[data-theme="dark"] .stat-card i { 
-    background: rgba(96, 165, 250, 0.15); 
+.stat-card i {
+    font-size: 1.2rem;
+    padding: 10px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.stat-info .stat-label { font-size: 0.9rem; color: var(--text-sub); font-weight: 500; }
-.stat-info .stat-value { font-size: 1.8rem; font-weight: 800; display: block; }
+/* Color Coding for Stats */
+.stat-green i { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
+.stat-yellow i { background: rgba(234, 179, 8, 0.12); color: #eab308; }
+.stat-red i { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.stat-blue i { background: rgba(0, 98, 255, 0.12); color: var(--primary); }
+
+.stat-info .stat-label { 
+    font-size: 0.7rem; 
+    color: var(--text-sub); 
+    font-weight: 700; 
+    display: block;
+    margin-bottom: 0px;
+    white-space: nowrap;
+}
+.stat-info .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text-main); }
+
+/* وەڵامدەرەوەی زیرەک بۆ کارتەکان */
+@media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .stats-grid {
+        grid-template-columns: 1fr; 
+    }
+    .admin-header {
+        flex-direction: column-reverse;
+        text-align: center;
+        gap: 20px;
+    }
+}
 
 .section-title {
     font-size: 1.1rem;

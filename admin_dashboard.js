@@ -137,7 +137,16 @@ function renderAttendance(attendance, employees) {
         return acc;
     }, {});
 
-    let present = 0;
+    // ئامارە نوێیەکان
+    let stats = {
+        earlyIn: 0,    // پێش 8:30
+        lateIn: 0,     // 8:30 - 9:00
+        veryLateIn: 0, // دوای 9:00
+        earlyOut: 0,   // پێش 2:30
+        onTimeOut: 0,  // دوای 2:30
+        absent: 0,     // ئەو کەسانەی چێک ئینیان نەکردووە
+        notCheckedOut: 0 // ئەو کەسانەی هاتنیان کردووە بەڵام دەرنەچوون
+    };
 
     for (const [branch, emps] of Object.entries(grouped)) {
         const section = document.createElement('div');
@@ -148,7 +157,37 @@ function renderAttendance(attendance, employees) {
             const row = document.createElement('div');
             row.className = 'attendance-item';
             
-            if (record) present++;
+            if (record) {
+                const checkIn = new Date(record.check_in_time);
+                const inTime = checkIn.getHours() * 60 + checkIn.getMinutes();
+                
+                // حیسابکردنی جۆری هاتن
+                if (inTime < 510) { // پێش 8:30
+                    stats.earlyIn++;
+                } else if (inTime <= 540) { // 8:30 - 9:00
+                    stats.lateIn++;
+                } else { // دوای 9:00
+                    stats.veryLateIn++;
+                }
+
+                // حیسابکردنی جۆری دەرچوون (ئەگەر کرابێت)
+                if (record.check_out_time) {
+                    const checkOut = new Date(record.check_out_time);
+                    const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
+                    
+                    if (outTime < 870) { // پێش 2:30 (14:30)
+                        stats.earlyOut++;
+                    } else { // دوای 2:30
+                        stats.onTimeOut++;
+                    }
+                } else {
+                    // هاتنی کردووە بەڵام دەرنەچووە
+                    stats.notCheckedOut++;
+                }
+            } else {
+                // ئەگەر هیچ ڕیکۆردێکی نەبوو، واتە نەهاتووە
+                stats.absent++;
+            }
             
             const timeIn = record ? new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '---';
             const status = record ? '<span class="status-pill status-present">ئامادەبوو</span>' : '<span class="status-pill status-absent">نەهاتوو</span>';
@@ -164,8 +203,14 @@ function renderAttendance(attendance, employees) {
         listDiv.appendChild(section);
     }
 
-    document.getElementById('presentCount').innerText = present;
-    document.getElementById('absentCount').innerText = employees.length - present;
+    // نوێکردنەوەی کارتەکان لە UI
+    document.getElementById('countEarlyIn').innerText = stats.earlyIn;
+    document.getElementById('countLateIn').innerText = stats.lateIn;
+    document.getElementById('countVeryLateIn').innerText = stats.veryLateIn;
+    document.getElementById('countEarlyOut').innerText = stats.earlyOut;
+    document.getElementById('countOnTimeOut').innerText = stats.onTimeOut;
+    document.getElementById('countAbsent').innerText = stats.absent;
+    document.getElementById('countNotCheckedOut').innerText = stats.notCheckedOut;
 }
 
 function viewDetails(userId) {
