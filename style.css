@@ -36,6 +36,26 @@
     -webkit-tap-highlight-color: transparent;
 }
 
+/* Custom Modern Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-sub); /* ڕەنگی هەمیشەیی بۆ سکڕۆڵبار */
+    border-radius: 20px;
+    border: 2px solid var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-sub); /* ڕەنگەکە ناگۆڕێت لە کاتی هۆڤەر */
+}
+
 body {
    background-color: var(--bg-color);
     color: var(--text-main); /* Use new variable name */

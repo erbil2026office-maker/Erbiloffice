@@ -2,8 +2,16 @@ const URL_SB = 'https://mygqlubvxdbbsygitjuj.supabase.co';
 const KEY_SB = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15Z3FsdWJ2eGRiYnN5Z2l0anVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MjA3NzIsImV4cCI6MjA5MTI5Njc3Mn0.bAecJcTMfZEiT1doet_PgH3EEjjAB6juNRoCJlK9qeA';
 const adminClient = supabase.createClient(URL_SB, KEY_SB);
 
+let attendanceCache = []; // پاشەکەوتکردنی داتا بۆ فلتەرکردنی خێرا
+let staffCache = [];      // پاشەکەوتکردنی فەرمانبەران
+let justificationsCache = []; // پاشەکەوتکردنی ڕوونکردنەوەکان
 let allAdminsCached = []; // بۆ هەڵگرتنی لیستی ئادمینەکان و نوێکردنەوەی دۆخی ئۆنلاین
 let onlineAdmins = {};    // بۆ هەڵگرتنی ئەو ئادمینانەی ئێستا لەسەر هێڵن
+
+let currentFilters = {
+    branch: 'all',
+    status: 'all'
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
     // پشکنینی ئادمین
@@ -42,15 +50,14 @@ async function loadBranches() {
         const { data, error } = await adminClient.from('branches').select('*').order('branch_name');
         if (error) throw error;
         
-        const select = document.getElementById('branchFilter');
-        if (data) {
-            data.forEach(b => {
-                const opt = document.createElement('option');
-                opt.value = b.branch_id;
-                opt.innerText = b.branch_name;
-                select.appendChild(opt);
-            });
-        }
+        const branchOptions = document.getElementById('branchOptions');
+        data?.forEach(b => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = `${b.branch_id} | ${b.branch_name}`;
+            div.onclick = () => selectOption('branchSelect', b.branch_id, div.innerText, true);
+            branchOptions.appendChild(div);
+        });
     } catch (err) {
         console.error("Error loading branches:", err.message);
     }
@@ -59,7 +66,7 @@ async function loadBranches() {
 async function loadAttendanceData() {
     const listDiv = document.getElementById('attendanceList');
     const date = document.getElementById('datePicker').value;
-    const branchFilter = document.getElementById('branchFilter').value;
+   const branchFilter = currentFilters.branch;
 
     listDiv.innerHTML = '<div class="loading-state"><i class="fas fa-spinner fa-spin"></i> باردەکرێت...</div>';
 
@@ -79,10 +86,10 @@ async function loadAttendanceData() {
             return;
         }
 
-    // هێنانی ژمارەی ڕوونکردنەوەکان بۆ ئەو ڕێکەوتە
-    const { count: justCount } = await adminClient
+    // هێنانی ڕوونکردنەوەکان بە لیست بۆ فلتەرکردن
+    const { data: justs } = await adminClient
         .from('justifications')
-        .select('*', { count: 'exact', head: true })
+        .select('user_id, reason')
         .eq('date', date);
 
     // هێنانی هەموو فەرمانبەران بۆ ئەوەی بزانین کێ غائیبە
@@ -94,15 +101,93 @@ async function loadAttendanceData() {
         const admins = allEmployees.filter(emp => emp.role === 'admin');
         const staff = allEmployees.filter(emp => emp.role !== 'admin');
 
+        attendanceCache = data || [];
+        staffCache = staff || [];
+        justificationsCache = justs || [];
+
         allAdminsCached = admins; // پاشەکەوتکردنی لیستەکە بۆ بەکارهێنان لە پرێزنس
         renderAdmins(admins);
-        document.getElementById('justificationCount').innerText = justCount || 0;
-        renderAttendance(data || [], staff || []);
+        document.getElementById('justificationCount').innerText = justificationsCache.length;
+        applyFiltersLocally(); // بانگکردنی فلتەرەکان
     } catch (err) {
         console.error("Global load error:", err);
         listDiv.innerHTML = "کێشەیەک لە بارکردنی داتا ڕوویدا.";
     }
 }
+
+// فلتەرکردنی داتا بەبێ دووبارە بانگکردنەوەی داتابەیس
+function applyFiltersLocally() {
+    const statusFilter = currentFilters.status;
+    const searchQuery = document.getElementById('nameSearch').value.toLowerCase();
+    
+    let filteredStaff = staffCache.filter(emp => {
+        const record = attendanceCache.find(a => a.user_id === emp.id);
+        const hasJustification = justificationsCache.some(j => j.user_id === emp.id);
+
+        // ١. گەڕان بەپێی ناو
+        const matchesSearch = emp.full_name.toLowerCase().includes(searchQuery);
+        if (!matchesSearch) return false;
+        
+        if (statusFilter === 'all') return true;
+        
+        if (record) {
+            const checkIn = new Date(record.check_in_time);
+            const inTime = checkIn.getHours() * 60 + checkIn.getMinutes();
+            const hasExit = record.check_out_time !== null;
+            
+            if (statusFilter === 'earlyIn') return inTime < 510;
+            if (statusFilter === 'lateIn') return inTime >= 510 && inTime <= 540;
+            if (statusFilter === 'veryLateIn') return inTime > 540;
+            
+            if (hasExit) {
+                const checkOut = new Date(record.check_out_time);
+                const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
+                if (statusFilter === 'earlyOut') return outTime < 870;
+                if (statusFilter === 'onTimeOut') return outTime >= 870;
+            } else {
+                if (statusFilter === 'noExit') return true;
+            }
+        } else {
+            if (statusFilter === 'absent') return true;
+        }
+        
+        if (statusFilter === 'justified') return hasJustification;
+        
+        return false;
+    });
+
+    renderAttendance(attendanceCache, filteredStaff);
+}
+
+// --- Custom Dropdown Logic ---
+function toggleCustomDropdown(id) {
+    const el = document.getElementById(id);
+    const isActive = el.classList.contains('active');
+    document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('active'));
+    if (!isActive) el.classList.add('active');
+}
+
+function selectOption(id, value, text, shouldReload = false) {
+    const el = document.getElementById(id);
+    el.querySelector('.selected-text').innerText = text;
+    el.querySelectorAll('.option').forEach(opt => {
+        opt.classList.toggle('selected', opt.innerText === text);
+    });
+    el.classList.remove('active');
+
+    if (id === 'branchSelect') currentFilters.branch = value;
+    if (id === 'statusSelect') currentFilters.status = value;
+
+    if (shouldReload) loadAttendanceData();
+    else applyFiltersLocally();
+}
+
+// داخستنی لیستەکان ئەگەر کلیک لە دەرەوە کرا
+window.addEventListener('click', (e) => {
+    if (!e.target.closest('.custom-select')) {
+        document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('active'));
+    }
+});
 
 function renderAdmins(admins) {
     const container = document.getElementById('adminsSection');
@@ -131,7 +216,7 @@ function renderAttendance(attendance, employees) {
 
     // پۆلێنکردن بەپێی بنکە
     const grouped = employees.reduce((acc, emp) => {
-        const bName = emp.branches ? emp.branches.branch_name : "بێ بنکە";
+        const bName = emp.branches ? `${emp.branches.branch_id} | ${emp.branches.branch_name}` : "بێ بنکە";
         if (!acc[bName]) acc[bName] = [];
         acc[bName].push(emp);
         return acc;
@@ -216,4 +301,8 @@ function renderAttendance(attendance, employees) {
 function viewDetails(userId) {
     // لێرە دەتوانین مۆداڵێک بکەینەوە بۆ بینینی لۆکەیشن یان ڕیسێت کردنی ئامێر
     alert("ووردەکاری بۆ فەرمانبەر: " + userId);
+}
+
+function handlePrint() {
+    alert("ئامادەکاری بۆ چاپکردن... (دیزاینی ڕاپۆرتەکە دواتر جێبەجێ دەکرێت)");
 }
