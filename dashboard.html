@@ -106,16 +106,22 @@
     </div>
 
     <div id="dayDetails" class="modal-overlay" onclick="closeModal(event)">
-        <div class="modal-window">
-            <div class="modal-icon"><i class="fas fa-history"></i></div>
-            <h4 id="detailDate" data-i18n="date">ڕێکەوت</h4>
-            <div class="modal-content-area">
-                <div id="detailIn" class="detail-text"></div>
-                <div id="detailOut" class="detail-text"></div>
+        <div class="modal-window update-card">
+            <div class="update-header history-header">
+                <div class="update-icon-wrapper">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
             </div>
-            <button onclick="document.getElementById('dayDetails').style.display='none'" class="checkin-btn" style="margin-top: 15px; box-shadow: none;" data-i18n="close">
-                داخستن
-            </button>
+            <div class="update-body">
+                <h4 id="detailDate" style="margin-bottom: 20px; font-size: 1.1rem; color: var(--text-main);">ڕێکەوت</h4>
+                <div id="detailContent">
+                    <div id="detailIn" class="detail-text"></div>
+                    <div id="detailOut" class="detail-text"></div>
+                </div>
+                <button onclick="document.getElementById('dayDetails').style.display='none'" class="login-btn" style="margin-top: 15px;">
+                    <span data-i18n="close">داخستن</span>
+                </button>
+            </div>
         </div>
     </div>
 

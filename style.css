@@ -340,13 +340,22 @@ input:focus + .input-icon { color: var(--accent-pink); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* History Modal Specific Header */
+.history-header {
+    background: linear-gradient(135deg, #64748b, #475569) !important;
+}
+
 .detail-text {
-    background: var(--input-bg);
-    padding: 12px;
+     background: var(--card-bg);
+    padding: 15px;
     border-radius: 12px;
     margin: 10px 0;
     text-align: right;
     font-size: 0.9rem;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .detail-text b {
@@ -636,6 +645,15 @@ input:focus + .input-icon { color: var(--accent-pink); }
     border: 1px solid #22c55e;
     background: #f0fdf4;
     color: #166534;
+}
+.weekend-default-day {
+    color: var(--primary); /* ڕەنگی شین بۆ دەقی ڕۆژەکە */
+    background: rgba(0, 98, 255, 0.08); /* پاشبنەمایەکی شینی کاڵ بۆ ناسینەوەی پشوو */
+}
+.missed-day {
+    border: 1px solid #ef4444;
+    background: #fef2f2;
+    color: #991b1b;
 }
 .today {
     background: var(--primary) !important;

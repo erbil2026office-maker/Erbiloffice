@@ -689,6 +689,9 @@ function renderCalendar() {
         grid.innerHTML += `<div class="calendar-day-name">${d}</div>`;
     });
 
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+
     const firstDay = new Date(year, month, 1).getDay(); // Sunday is 0
     const spaces = (firstDay + 1) % 7; // Adjust for Saturday start
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -704,10 +707,21 @@ function renderCalendar() {
         const record = attendanceData.find(r => r.check_in_time.startsWith(dateStr));
         const dayDate = new Date(year, month, day);
         const dayOfWeek = dayDate.getDay(); // 0=Sun, 5=Fri, 6=Sat
+        const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6); // 5 for Friday, 6 for Saturday
+        const isPastDay = (dayDate < todayDate);
         
         let className = "calendar-day";
-        if (record) className += " has-record";
-        if (dayOfWeek === 5 || dayOfWeek === 6) className += " weekend-day";
+
+        if (isWeekend) {
+            className += " weekend-default-day"; // Default blue for weekends
+        }
+
+        if (record) {
+            className += " has-record";
+        } else if (isPastDay && !isWeekend) {
+            // تەنها ڕۆژانی ڕابردووی نا-پشوو کە تۆماریان نییە بە سوور دیاری دەکرێن
+            className += " missed-day";
+        }
         if (new Date().toDateString() === dayDate.toDateString()) className += " today";
 
         const dayEl = document.createElement('div');
@@ -721,12 +735,18 @@ function renderCalendar() {
 function showDayDetails(record, dateStr) {
     const modal = document.getElementById('dayDetails');
      document.getElementById('detailDate').innerText = translations[currentLang].date + " " + dateStr;
+    
     if (record) {
-         document.getElementById('detailIn').innerHTML = `<i class="fas fa-sign-in-alt" style="color: #22c55e; margin-left: 10px;"></i> ${translations[currentLang].arrival}: <b>${new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true})}</b>`;
-        document.getElementById('detailOut').innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444; margin-left: 10px;"></i> ${translations[currentLang].checkout}: <b>${record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : translations[currentLang].notRecorded}</b>`;
+        document.getElementById('detailIn').style.display = 'flex';
+        document.getElementById('detailOut').style.display = 'flex';
+        document.getElementById('detailIn').innerHTML = `<i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> <div>${translations[currentLang].arrival}: <b>${new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true})}</b></div>`;
+        document.getElementById('detailOut').innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : translations[currentLang].notRecorded}</b></div>`;
     } else {
-        document.getElementById('detailIn').innerHTML = `<i class="fas fa-info-circle"></i> ${translations[currentLang].recordNotFound}`;
-        document.getElementById('detailOut').innerText = "";
+        document.getElementById('detailOut').style.display = 'none';
+        document.getElementById('detailIn').innerHTML = `<div style="text-align: center; width: 100%; padding: 20px 0; color: var(--text-sub);">
+            <i class="fas fa-calendar-times" style="font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+            ${translations[currentLang].recordNotFound}
+        </div>`;
     }
     modal.style.display = 'flex';  // دڵنیابوونەوە لە بەکارهێنانی flex بۆ ناوەندکردنی تەواو
 }
