@@ -115,14 +115,12 @@ function applyTheme() {
 
     if (currentTheme === 'dark') {
         body.setAttribute('data-theme', 'dark');
-        if (themeIcon) themeIcon.innerText = "☀️";
         document.body.classList.add('dark-mode');
-        if (themeBtn) themeBtn.innerHTML = '<span class="theme-icon">☀️</span>';
+        if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-moon theme-icon-anim" style="color: #ffffff;"></i>';
     } else {
         body.removeAttribute('data-theme');
-        if (themeIcon) themeIcon.innerText = "🌙";
         document.body.classList.remove('dark-mode');
-        if (themeBtn) themeBtn.innerHTML = '<span class="theme-icon">🌙</span>';
+        if (themeBtn) themeBtn.innerHTML = '<i class="fas fa-sun theme-icon-anim" style="color: #ff9f43;"></i>';
     }
 }
 
