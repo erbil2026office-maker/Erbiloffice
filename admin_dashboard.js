@@ -39,6 +39,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
+    // گوێگرتن لە گۆڕانکارییەکانی خشتەی ئامادەبوون بە شێوەی ڕاستەوخۆ
+    adminClient
+        .channel('attendance_realtime')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attendance' }, payload => {
+            // ئەگەر ڕێکەوتەکە هی ئەمڕۆ بوو، داتاکە نوێ بکەرەوە
+            const today = new Date().toISOString().split('T')[0];
+            if (payload.new.check_in_time.startsWith(today)) {
+                loadAttendanceData();
+            }
+        })
+        .subscribe();
+
     // دانانی ڕێکەوتی ئەمڕۆ وەک دیفۆڵت
     document.getElementById('datePicker').valueAsDate = new Date();
     applyLanguage(); // دڵنیابوونەوە لە جێبەجێبوونی وەرگێڕان لە سەرەتاوە
@@ -449,8 +461,138 @@ function closeJustModal(event) {
 }
 
 function handlePrint() {
-    alert("ئامادەکاری بۆ چاپکردن... (دیزاینی ڕاپۆرتەکە دواتر جێبەجێ دەکرێت)");
+    const date = document.getElementById('datePicker').value;
+    const searchQuery = document.getElementById('nameSearch').value.toLowerCase();
+    const statusFilter = currentFilters.status;
+    const t = translations[currentLang];
+
+    // فلتەرکردنی داتاکان بە هەمان شێوەی ناو داشبۆردەکە
+    const filteredStaff = staffCache.filter(emp => {
+        const record = attendanceCache.find(a => a.user_id === emp.id);
+        const matchesSearch = emp.full_name.toLowerCase().includes(searchQuery);
+        if (!matchesSearch) return false;
+        if (statusFilter === 'all') return true;
+        
+        if (record) {
+            const checkIn = new Date(record.check_in_time);
+            const inTime = checkIn.getHours() * 60 + checkIn.getMinutes();
+            const hasExit = record.check_out_time !== null;
+            if (statusFilter === 'earlyIn') return inTime < 510;
+            if (statusFilter === 'lateIn') return inTime >= 510 && inTime <= 540;
+            if (statusFilter === 'veryLateIn') return inTime > 540;
+            if (hasExit) {
+                const checkOut = new Date(record.check_out_time);
+                const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
+                if (statusFilter === 'earlyOut') return outTime < 870;
+                if (statusFilter === 'onTimeOut') return outTime >= 870;
+            } else if (statusFilter === 'noExit') return true;
+        } else if (statusFilter === 'absent') return true;
+        if (statusFilter === 'justified') return justificationsCache.some(j => j.user_id === emp.id);
+        return false;
+    });
+
+    const printWindow = window.open('', '_blank');
+    
+    // دروستکردنی ڕیزەکانی خشتەکە
+    let rowsHtml = filteredStaff.map((emp, index) => {
+        const record = attendanceCache.find(a => a.user_id === emp.id);
+        const branchInfo = emp.branches ? `${emp.branches.branch_id} | ${emp.branches.branch_name}` : '-';
+        const tIn = record ? new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '-';
+        const tOut = record?.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '-';
+        
+        return `
+            <tr>
+                <td style="font-weight: 600; color: #444;">${index + 1}</td>
+                <td style="text-align: right; font-weight: 700; padding-right: 12px;">${emp.full_name}</td>
+                <td style="font-size: 11px;">${branchInfo}</td>
+                <td dir="ltr">${tIn}</td>
+                <td dir="ltr">${tOut}</td>
+                <td></td>
+            </tr>
+        `;
+    }).join('');
+
+    const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="ku" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <title>Report - ${date}</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;800&display=swap');
+                
+                body { font-family: 'Noto Kufi Arabic', sans-serif; padding: 10px; background: white; color: #000; }
+                .header-official { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+                .header-text { text-align: right; }
+                .header-text h1 { font-size: 18px; margin: 0; font-weight: 800; }
+                .header-text h2 { font-size: 14px; margin: 4px 0 0 0; font-weight: 600; color: #333; }
+                .header-logo img { width: 75px; display: block; }
+                
+                .meta-section { display: flex; justify-content: flex-start; margin-bottom: 15px; font-size: 12px; font-weight: 700; padding: 0 5px; }
+                
+                .table-wrapper { border: 0.8px solid #000; border-radius: 8px; overflow: hidden; }
+                table { width: 100%; border-collapse: collapse; background: #fff; }
+                th, td { border: 0.2px solid #bbb; padding: 10px 5px; text-align: center; font-size: 11.5px; }
+                th { background-color: #f8f8f8; color: #000; font-weight: 800; font-size: 12px; }
+                
+                .footer-official { margin-top: 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 100px; padding: 0 40px; }
+                .sign-area { text-align: center; }
+                .sign-area p { margin: 0; font-weight: 800; font-size: 13px; }
+                .sign-line { margin-top: 50px; border-top: 0.8px dashed #000; width: 160px; margin-left: auto; margin-right: auto; }
+                
+                @media print { 
+                    @page { size: A4; margin: 0; }
+                    body { margin: 1.2cm; padding: 0; color: #000; }
+                    .table-wrapper { border-radius: 8px; border: 0.8px solid #000; }
+                    th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header-official">
+                <div class="header-text">
+                    <h1>${t.adminDashboardTitle.split(' - ')[0]}</h1>
+                    <h2>${t.printHeaderSub}</h2>
+                </div>
+                <div class="header-logo">
+                    <img src="assets/icon.png">
+                </div>
+            </div>
+
+            <div class="meta-section">
+                <span>${t.date}: ${date}</span>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th style="text-align: right; padding-right: 15px; width: 35%;">${t.colName}</th>
+                            <th style="width: 25%;">${t.colBranch}</th>
+                            <th style="width: 85px;">${t.arrival}</th>
+                            <th style="width: 85px;">${t.checkout}</th>
+                            <th style="width: 110px;">${t.tebini}</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rowsHtml}</tbody>
+                </table>
+            </div>
+
+
+            <script>
+                window.onload = function() {
+                    setTimeout(() => { window.print(); window.close(); }, 500);
+                };
+            </script>
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
 }
+
 async function handleLogout() {
     await adminClient.auth.signOut();
     location.href = 'index.html';

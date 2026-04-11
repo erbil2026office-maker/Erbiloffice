@@ -94,7 +94,7 @@ const translations = {
         printReport: "پرێنتکردن",
         attendanceListTitle: "لیستی ئامادەبووان",
         colName: "ناوی فەرمانبەر",
-        colBranch: "ژمارە | بنکە",
+        colBranch: "بنکەی تۆمار",
         colTime: "کاتی (هاتن / دەرچوون)",
         colStatus: "دۆخی ئێستا",
         colClass: "پۆڵێن",
@@ -122,8 +122,12 @@ const translations = {
         deleteSuccess: "ڕوونکردنەوەکە بە سەرکەوتوویی سڕایەوە",
         updateSuccess: "سەرکەوتوو بوو",
         print: "چاپکردن",
+        printHeaderSub: "ئۆفیسی پارێزگای هەولێر - سیستەمی هاتن و دەرچوونی فەرمانبەران ",
+        adminDeptManager: "بەرپرسی بەشی کارگێڕی",
+        officeManagerSign: "بەڕێوەبەری ئۆفیس",
         copyrightText: "هەموو مافێك پارێزراوە بۆ ئۆفیسی پارێزگای هەولێر",
-        developedBy: "گەشەپێدراوە لەلایەن"
+        developedBy: "گەشەپێدراوە لەلایەن",
+        tebini:"تێبینی"
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -218,7 +222,7 @@ const translations = {
         printReport: "طباعة التقرير",
         attendanceListTitle: "قائمة الحضور",
         colName: "اسم الموظف",
-        colBranch: "الرقم | المركز",
+        colBranch: "مركز التسجيل",
         colTime: "وقت (الدخول / الخروج)",
         colStatus: "الحالة الحالية",
         colClass: "التصنيف",
@@ -246,8 +250,13 @@ const translations = {
         deleteSuccess: "تم حذف التبرير بنجاح",
         updateSuccess: "تم بنجاح",
         print: "طباعة",
+        printHeaderSub: "مكتب محافظة أربيل - نظام الحضور والانصراف للموظفين",
+        adminDeptManager: "مسؤول القسم الإداري",
+        officeManagerSign: "مدير المكتب",
         copyrightText: "جميع الحقوق محفوظة لمكتب محافظة أربيل",
-        developedBy: "تم التطوير بواسطة"
+        developedBy: "تم التطوير بواسطة",
+        tebini:"ملاحظة"
+
     }
 };
 

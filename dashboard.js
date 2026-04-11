@@ -263,7 +263,7 @@ function startTracking() {
                     userPos.latitude, userPos.longitude,
                     userProfile.branches.latitude, userProfile.branches.longitude
                 );
-                const allowedRadius = userProfile.branches.accuracy || 100; // Default to 100m if not set
+                const allowedRadius = userProfile.branches.accuracy || 150; // بەکارهێنانی ١٥٠ وەکFallback ئەگەر لە داتابەیس دیاری نەکرابوو
                 isWithinGeofence = distanceToBranch <= allowedRadius;
                 
                 // Update accuracyArea with distance to branch
@@ -487,7 +487,7 @@ async function processCheckIn() {
             userPos.latitude, userPos.longitude,
             userProfile.branches.latitude, userProfile.branches.longitude
         );
-        isWithinGeofence = distanceToBranch <= userProfile.branches.accuracy;
+        isWithinGeofence = distanceToBranch <= (userProfile.branches.accuracy || 150);
     } else if (userProfile && !userProfile.branches) {
         // If user has no assigned branch, geofence check is skipped, so it's considered within.
         isWithinGeofence = true; // If no branch assigned, geofence check is not applicable for strict blocking, but we still need to check if it's explicitly set to null/undefined
@@ -578,7 +578,7 @@ async function processCheckOut() {
             userPos.latitude, userPos.longitude,
             userProfile.branches.latitude, userProfile.branches.longitude
         );
-        isWithinGeofence = distanceToBranch <= userProfile.branches.accuracy;
+        isWithinGeofence = distanceToBranch <= (userProfile.branches.accuracy || 150);
     } else if (userProfile && !userProfile.branches) {
         isWithinGeofence = true;
     } else { // If userProfile or branch data is missing, cannot perform geofence check, so block
