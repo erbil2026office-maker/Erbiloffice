@@ -480,6 +480,16 @@ input:focus + .input-icon { color: var(--accent-pink); }
 }
 .btn-delete:hover { background: #ef4444 !important; color: white !important; }
 
+.justification-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.justification-controls .login-btn { margin-top: 0 !important; }
+.justification-controls #saveJustBtn { flex: 1; }
+.justification-controls #deleteJustBtn { display: none; }
+
 .btn-justification-edit {
     background: rgba(0, 98, 255, 0.1) !important;
     color: var(--primary) !important;

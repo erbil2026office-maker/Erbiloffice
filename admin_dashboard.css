@@ -35,8 +35,8 @@ body {
     width: 95px;
     height: 95px;
     background: rgb(255, 255, 255);
-    backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
     border-radius: 16px;
     display: flex;
     justify-content: center;
@@ -46,7 +46,7 @@ body {
 }
 
 .admin-header-logo {
-    max-width: 75%;
+    max-width: 100%;
     object-fit: contain;
 }
 
@@ -80,8 +80,8 @@ body {
     height: 44px;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
     cursor: pointer;
@@ -150,8 +150,8 @@ body {
 
 .stat-card {
     background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(20px);
     padding: 12px 15px;
     border-radius: 16px;
     display: flex;
@@ -309,8 +309,8 @@ body {
 
 .glass-card {
     background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
     border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 20px 25px;
     border-radius: 22px;
@@ -433,6 +433,7 @@ body {
     transform-origin: top;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
    background: var(--card-bg) !important; 
+    -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important; /* لابردنی تەم بۆ ڕێگری لە تێکەڵبوونی تێکستەکان */
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2); /* زیادکردنی سێبەر بۆ جیاکردنەوەی لە ژێرەوە */
 }
@@ -674,6 +675,17 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     border-radius: 50%;
     animation: statusPulse 2s infinite;
 }
+
+.admin-footer-margin {
+    margin-bottom: 20px !important;
+}
+
+.btn-reset-danger {
+    background-color: #ef4444 !important;
+    margin-bottom: 10px;
+}
+.btn-reset-danger:hover { background-color: #dc2626 !important; }
+
 
 .justification-view-box {
     background: var(--input-bg);
@@ -939,6 +951,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 /* Admin Chips Styling */
 .admins-display-area {
+    display: none;
     background: linear-gradient(to left, var(--card-bg), var(--bg-color));
     padding: 12px 25px;
     border-radius: 20px;

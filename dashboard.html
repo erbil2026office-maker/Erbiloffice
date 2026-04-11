@@ -122,11 +122,11 @@
                 <div id="justificationSection" class="justification-area">
                     <label for="justificationInput" data-i18n="justification">ڕوونکردنەوە</label>
                     <textarea id="justificationInput" class="justification-input" data-i18n="justificationPlaceholder" placeholder="..."></textarea>
-                    <div style="display: flex; gap: 8px; margin-top: 10px;">
-                        <button id="saveJustBtn" class="login-btn history-btn" onclick="submitJustification()" style="flex: 1; margin-top: 0 !important;">
+                    <div class="justification-controls">
+                        <button id="saveJustBtn" class="login-btn history-btn" onclick="submitJustification()" data-i18n="saveJustification" title="Save">
                             <i class="fas fa-paper-plane"></i> <span data-i18n="saveJustification">ناردنی ڕوونکردنەوە</span>
                         </button>
-                        <button id="deleteJustBtn" class="login-btn btn-delete" onclick="deleteJustification()" style="display:none; margin-top: 0 !important;">
+                        <button id="deleteJustBtn" class="login-btn btn-delete" onclick="deleteJustification()" data-i18n="deleteJustification" title="Delete">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>

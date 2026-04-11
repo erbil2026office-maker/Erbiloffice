@@ -34,7 +34,7 @@
         </header>
 
         <!-- Admins Section -->
-        <div id="adminsSection" class="admins-display-area" style="display: none;" onclick="toggleAdminsMobile()">
+        <div id="adminsSection" class="admins-display-area" onclick="toggleAdminsMobile()">
             <div class="toggle-content">
                 <i class="fas fa-user-shield"></i>
                 <span class="admins-label" data-i18n="adminLabel">بەڕێوەبەرانی سیستم:</span>
@@ -129,12 +129,12 @@
         <section class="filter-section glass-card filter-entrance">
             <div class="filter-grid">
                 <div class="filter-item">
-                    <label><i class="fas fa-search"></i> <span data-i18n="searchName">گەڕان بەپێی ناو</span></label>
+                    <label for="nameSearch"><i class="fas fa-search"></i> <span data-i18n="searchName">گەڕان بەپێی ناو</span></label>
                     <input type="text" id="nameSearch" class="glass-input" data-i18n="searchPlaceholder" placeholder="ناوی فەرمانبەر بنووسە..." oninput="applyFiltersLocally()">
                 </div>
                 <div class="filter-item">
-                    <label><i class="fas fa-calendar-day"></i> <span data-i18n="date">ڕێکەوت</span></label>
-                    <input type="date" id="datePicker" class="glass-input" onchange="loadAttendanceData()">
+                    <label for="datePicker"><i class="fas fa-calendar-day"></i> <span data-i18n="date">ڕێکەوت</span></label>
+                    <input type="date" id="datePicker" class="glass-input" onchange="loadAttendanceData()" data-i18n="date" title="Select Date">
                 </div>
                 <div class="filter-item">
                     <label><i class="fas fa-building"></i> <span data-i18n="branchLabel">بنکە</span></label>
@@ -188,7 +188,7 @@
         </div>
 
         <!-- Developer Credit -->
-        <div class="developer-credit" style="margin-bottom: 20px;">
+        <div class="developer-credit admin-footer-margin">
             <span data-i18n="developedBy">گەشەیپێدراوە لەلایەن</span> <i class="fas fa-code"></i> <span class="dev-name">مەبەست وریا قادر</span>
         </div>
     </div>
@@ -204,7 +204,7 @@
             <div class="update-body">
                 <h3 id="justUserTitle">ڕوونکردنەوە</h3>
                 <div id="justTextContent" class="justification-view-box"></div>
-                <button class="login-btn" onclick="resetDeviceID()" style="background: #ef4444; margin-bottom: 10px;">
+                <button class="login-btn btn-reset-danger" onclick="resetDeviceID()">
                     <i class="fas fa-mobile-alt"></i> <span data-i18n="resetDevice">ڕیسێتکردنی ئامێر</span>
                 </button>
                 <button class="login-btn" onclick="document.getElementById('justModal').style.display='none'">
