@@ -100,6 +100,7 @@ const translations = {
         colJust: "ڕوونکردنەوە",
         statusPresent: "ئامادەبوو",
         statusAbsent: "نەهاتوو",
+        onDuty: "ئێستا لە دەوامدایە",
         showStats: "نیشاندانی ئامارەکان",
         hideStats: "شاردنەوەی ئامارەکان",
         showAttendanceList: "نیشاندانی لیستی ئامادەبووان",
@@ -107,12 +108,17 @@ const translations = {
         countPerson: "کەس",
         noJustRecorded: "بۆ ئەم ڕێکەوتە هیچ ڕوونکردنەوەیەک نەنووسراوە.",
         justificationOf: "ڕوونکردنەوەی:",
+        resetDevice: "ڕیسێتکردنی ئامێر",
+        resetConfirmMsg: "ئایا دڵنیایت لە ڕیسێتکردنی ناسنامەی ئامێری ئەم فەرمانبەرە؟",
+        resetSuccess: "ناسنامەی ئامێر بە سەرکەوتوویی ڕیسێت کرایەوە.",
         mockLocationError: "هەڵە: لۆکەیشنی ساختە (Fake GPS) دۆزرایەوە! تکایە ئەپەکان بکوژێنەرەوە.",
         saveJustification: "ناردنی ڕوونکردنەوە",
         editJustification: "دەستکاریکردنی ڕوونکردنەوە",
         justificationPlaceholder: "هۆکاری درەنگ هاتن یان نەهاتن لێرە بنووسە...",
         justificationSuccess: "ڕوونکردنەوەکەت بە سەرکەوتوویی تۆمار کرا.",
-        print: "چاپکردن"
+        print: "چاپکردن",
+        copyrightText: "هەموو مافێك پارێزراوە بۆ ئۆفیسی پارێزگای هەولێر",
+        developedBy: "گەشەپێدراوە لەلایەن"
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -213,6 +219,7 @@ const translations = {
         colJust: "التبرير",
         statusPresent: "حاضر",
         statusAbsent: "غائب",
+        onDuty: "موجود في الدوام حالياً",
         showStats: "إظهار الإحصائيات",
         hideStats: "إخفاء الإحصائيات",
         showAttendanceList: "إظهار قائمة الحضور",
@@ -220,12 +227,17 @@ const translations = {
         countPerson: "أشخاص",
         noJustRecorded: "لا يوجد تبرير مسجل لهذا التاريخ.",
         justificationOf: "تبرير:",
+        resetDevice: "إعادة ضبط الجهاز",
+        resetConfirmMsg: "هل أنت متأكد من إعادة ضبط معرف الجهاز لهذا الموظف؟",
+        resetSuccess: "تم إعادة ضبط معرف الجهاز بنجاح.",
         mockLocationError: "خطأ: تم اكتشاف موقع وهمي (Fake GPS)! يرجى إيقاف تشغيل التطبيقات.",
         saveJustification: "إرسال التبرير",
         editJustification: "تعديل التبرير",
         justificationPlaceholder: "اكتب سبب التأخير أو الغياب هنا...",
         justificationSuccess: "تم تسجيل التبرير بنجاح.",
-        print: "طباعة"
+        print: "طباعة",
+        copyrightText: "جميع الحقوق محفوظة لمكتب محافظة أربيل",
+        developedBy: "تم التطوير بواسطة"
     }
 };
 

@@ -7,6 +7,7 @@ let staffCache = [];      // پاشەکەوتکردنی فەرمانبەران
 let justificationsCache = []; // پاشەکەوتکردنی ڕوونکردنەوەکان
 let allAdminsCached = []; // بۆ هەڵگرتنی لیستی ئادمینەکان و نوێکردنەوەی دۆخی ئۆنلاین
 let onlineAdmins = {};    // بۆ هەڵگرتنی ئەو ئادمینانەی ئێستا لەسەر هێڵن
+let selectedUserIdForReset = null; // بۆ هەڵگرتنی ئایدی ئەو بەکارهێنەرەی ئێستا مۆداڵەکەی بۆ کراوەتەوە
 
 let currentFilters = {
     branch: 'all',
@@ -97,14 +98,17 @@ async function loadAttendanceData() {
         console.error("Justification Fetch Error:", justError.message);
     }
 
-    // هێنانی هەموو فەرمانبەران بۆ ئەوەی بزانین کێ غائیبە
-    let profQuery = adminClient.from('profiles').select('*, branches(branch_id, branch_name)');
-    if (branchFilter !== 'all') profQuery = profQuery.eq('branch_id', branchFilter);
-    const { data: allEmployees } = await profQuery.order('full_name');
+    // هێنانی ئادمینەکان بە جیا بۆ ئەوەی هەمیشە هەموویان دیار بن بەبێ گوێدانە فلتەری بنکە
+    const { data: admins } = await adminClient
+        .from('profiles')
+        .select('*, branches(branch_id, branch_name)')
+        .eq('role', 'admin')
+        .order('full_name');
 
-        // جیاکردنەوەی ئادمینەکان لە فەرمانبەران
-        const admins = allEmployees.filter(emp => emp.role === 'admin');
-        const staff = allEmployees.filter(emp => emp.role !== 'admin');
+    // هێنانی فەرمانبەران بەپێی فلتەری بنکە بۆ لیستی ئامادەبوون
+    let staffQuery = adminClient.from('profiles').select('*, branches(branch_id, branch_name)').neq('role', 'admin');
+    if (branchFilter !== 'all') staffQuery = staffQuery.eq('branch_id', branchFilter);
+    const { data: staff } = await staffQuery.order('full_name');
 
         attendanceCache = data || [];
         staffCache = staff || [];
@@ -208,24 +212,26 @@ function renderAdmins(admins) {
     const listDiv = document.getElementById('adminsList');
     const countBadge = document.getElementById('adminOnlineCount');
     
-    // فلتەرکردنی تەنها ئەو ئادمینانەی کە ئێستا لەسەر هێڵن
-    const onlineList = admins.filter(adm => 
-        Object.values(onlineAdmins).flat().some(presence => presence.user_id === adm.id)
-    );
-
-    if (onlineList.length > 0) {
+    if (admins && admins.length > 0) {
         container.style.display = 'flex';
         
-        // نوێکردنەوەی نیشانەی ژمارە لەسەر دوگمەکە
+        // ژماردنی ئەو ئادمینانەی کە ئێستا بە ڕاستی لەسەر هێڵن بۆ باجەکە
+        const onlineCount = admins.filter(adm => 
+            Object.values(onlineAdmins).flat().some(presence => presence.user_id === adm.id)
+        ).length;
+
         if (countBadge) {
-            countBadge.innerText = `${onlineList.length} ${translations[currentLang].countPerson}`;
+            countBadge.innerText = `${onlineCount} ${translations[currentLang].countPerson}`;
         }
 
-        listDiv.innerHTML = onlineList.map(adm => `
-            <div class="admin-chip online">
-                <i class="fas fa-user-tie"></i> ${adm.full_name}
-            </div>
-        `).join('');
+        listDiv.innerHTML = admins.map(adm => {
+            const isOnline = Object.values(onlineAdmins).flat().some(presence => presence.user_id === adm.id);
+            return `
+                <div class="admin-chip ${isOnline ? 'online' : ''}">
+                    <i class="fas fa-user-tie"></i> ${adm.full_name}
+                </div>
+            `;
+        }).join('');
 
         // هەمیشە کڵاسی درۆپ داون چالاک بکە بۆ مۆبایل
         container.classList.add('mobile-admin-dropdown');
@@ -287,6 +293,7 @@ function renderAttendance(attendance, employees) {
         emps.forEach(emp => {
             const record = attendance.find(a => a.user_id === emp.id);
             const row = document.createElement('div');
+            const isOnDuty = record && !record.check_out_time;
             row.className = 'attendance-item';
             let employeeClassifications = []; // لیستێک بۆ کۆکردنەوەی هەموو پۆڵێنەکان
             const just = justificationsCache.find(j => j.user_id === emp.id);
@@ -342,7 +349,7 @@ function renderAttendance(attendance, employees) {
             
             row.innerHTML = `
                 <div class="emp-name-col">
-                    <span class="emp-name">${emp.full_name}</span>
+                    <span class="emp-name">${isOnDuty ? `<span class="on-duty-pulse" title="${translations[currentLang].onDuty}"></span>` : ''}${emp.full_name}</span>
                 </div>
                 <div class="emp-branch-col">${branch}</div>
                 <div class="emp-time-col">
@@ -377,6 +384,7 @@ function renderAttendance(attendance, employees) {
 }
 
 function viewDetails(userId) {
+    selectedUserIdForReset = userId; // پاشەکەوتکردنی ئایدی بۆ کرداری ڕیسێت
     const staff = staffCache.find(s => s.id === userId);
     const just = justificationsCache.find(j => j.user_id === userId);
 
@@ -386,6 +394,25 @@ function viewDetails(userId) {
     document.getElementById('justUserTitle').innerText = `${titlePrefix} ${staffName}`;
     document.getElementById('justTextContent').innerText = just ? just.reason : translations[currentLang].noJustRecorded;
     document.getElementById('justModal').style.display = 'flex';
+}
+
+async function resetDeviceID() {
+    if (!selectedUserIdForReset) return;
+
+    const confirmReset = confirm(translations[currentLang].resetConfirmMsg);
+    if (!confirmReset) return;
+
+    const { error } = await adminClient
+        .from('profiles')
+        .update({ device_id: null })
+        .eq('id', selectedUserIdForReset);
+
+    if (error) {
+        alert("Error: " + error.message);
+    } else {
+        alert(translations[currentLang].resetSuccess);
+        document.getElementById('justModal').style.display = 'none';
+    }
 }
 
 function toggleStatsMobile() {

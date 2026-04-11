@@ -135,6 +135,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const reloadTriggered = await checkAppVersion();
     if (!reloadTriggered) {
         applyTheme();
+
+        // Update current year
+        const year = new Date().getFullYear();
+        document.querySelectorAll('.current-year').forEach(el => el.innerText = year);
         
         // چالاککردنی کلیلی Enter بۆ چوونەژوورەوە
         const loginInputs = document.querySelectorAll('#email, #password');
