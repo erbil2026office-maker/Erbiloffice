@@ -470,6 +470,16 @@ input:focus + .input-icon { color: var(--accent-pink); }
     transition: var(--transition);
 }
 
+.btn-delete {
+    background: #fee2e2 !important;
+    color: #ef4444 !important;
+    border: 1px solid #fecaca !important;
+    width: 45px !important;
+    padding: 0 !important;
+    flex-shrink: 0;
+}
+.btn-delete:hover { background: #ef4444 !important; color: white !important; }
+
 .btn-justification-edit {
     background: rgba(0, 98, 255, 0.1) !important;
     color: var(--primary) !important;
@@ -721,9 +731,18 @@ input:focus + .input-icon { color: var(--accent-pink); }
 
 /* Calendar Animation */
 #calendarWrapper {
-    display: none;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden; /* Ensures content is hidden when collapsed */
+    visibility: hidden; /* Hides from screen readers when collapsed */
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: top;
+}
+
+#calendarWrapper.expanded {
+    max-height: 500px; /* A value large enough to contain the calendar */
+    opacity: 1;
+    visibility: visible;
 }
 
 @keyframes btn-glow {

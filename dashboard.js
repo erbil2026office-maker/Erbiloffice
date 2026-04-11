@@ -128,7 +128,7 @@ function manualRefreshLocation() {
 function toggleCalendar() {
     const wrapper = document.getElementById('calendarWrapper');
     if (wrapper) {
-        wrapper.style.display = wrapper.style.display === 'none' ? 'block' : 'none';
+        wrapper.classList.toggle('expanded');
     }
 }
 
@@ -644,17 +644,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (profile) {
         userProfile = profile;
-        if (welcomeLabel) welcomeLabel.innerText = profile.full_name;
-        
-        const roleMap = { 'admin': translations[currentLang].admin, 'employee': translations[currentLang].employee };
-        let roleDisplay = roleMap[profile.role] || profile.role;
+        renderProfileDisplay();
 
-        // زیادکردنی ووردەکاری بنکە ئەگەر فەرمانبەرەکە بەستراوەتەوە بە بنکەیەکەوە
-        if (profile.branches) {
-            roleDisplay = `${roleDisplay} ${translations[currentLang].at} ${profile.branches.branch_id} | ${profile.branches.branch_name}`;
-        }
-
-        if (roleLabel) roleLabel.innerText = roleDisplay;
+        // گوێگرتن لە گۆڕینی زمان بۆ نوێکردنەوەی ڕۆڵ و بنکە بە شێوەیەکی داینامیکی
+        window.addEventListener('languageChanged', renderProfileDisplay);
 
         const hardwareFP = getHardwareFingerprint();
         let currentDev = getDeviceID();
@@ -690,6 +683,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     await fetchAttendance();
     startTracking();
 });
+
+function renderProfileDisplay() {
+    if (!userProfile) return;
+    const welcomeLabel = document.getElementById('welcomeUser');
+    const roleLabel = document.getElementById('userRole');
+    
+    if (welcomeLabel) welcomeLabel.innerText = userProfile.full_name;
+
+    // وەرگێڕانی ڕۆڵ بە شێوەیەکی وورد و چارەسەرکردنی کێشەی پیتە گەورە و بچووکەکان
+    const roleKey = (userProfile.role || 'employee').toLowerCase();
+    const translatedRole = translations[currentLang][roleKey] || (roleKey === 'admin' ? translations[currentLang].admin : translations[currentLang].employee);
+    let roleDisplay = translatedRole;
+
+    if (userProfile.branches) {
+        roleDisplay = `${roleDisplay} ${translations[currentLang].at} ${userProfile.branches.branch_id} | ${userProfile.branches.branch_name}`;
+    }
+    if (roleLabel) roleLabel.innerText = roleDisplay;
+}
 
 function updateStatus(msg, type) {
     const errDiv = document.getElementById('error-msg');
@@ -825,30 +836,104 @@ async function fetchJustification(dateStr) {
     
     if (data && data.reason) {
         input.value = data.reason;
+        input.readOnly = true; // قفڵکردنی تێکستەکە ئەگەر ڕوونکردنەوە پێشتر هەبوو
         saveBtn.classList.add('btn-justification-edit');
         saveBtn.innerHTML = `<i class="fas fa-edit"></i> <span>${translations[currentLang].editJustification}</span>`;
+        if (document.getElementById('deleteJustBtn')) document.getElementById('deleteJustBtn').style.display = 'flex';
     } else {
         input.value = "";
+        input.readOnly = false; // کراوە بێت ئەگەر ڕوونکردنەوە نەبوو
         saveBtn.classList.remove('btn-justification-edit');
         saveBtn.innerHTML = `<i class="fas fa-paper-plane"></i> <span>${translations[currentLang].saveJustification}</span>`;
+        if (document.getElementById('deleteJustBtn')) document.getElementById('deleteJustBtn').style.display = 'none';
     }
     
     input.placeholder = translations[currentLang].justificationPlaceholder;
 }
 
 async function submitJustification() {
-    const reason = document.getElementById('justificationInput').value.trim();
+    const input = document.getElementById('justificationInput');
     const saveBtn = document.getElementById('saveJustBtn');
+
+    // ئەگەر لە دۆخی دەستکاریکردن بوو، تەنها قفڵەکە بکەرەوە و دوگمەکە ناچالاک بکە تا گۆڕانکاری دەکرێت
+    if (saveBtn.classList.contains('btn-justification-edit')) {
+        input.readOnly = false;
+        input.focus();
+        saveBtn.classList.remove('btn-justification-edit');
+        saveBtn.innerHTML = `<i class="fas fa-paper-plane"></i> <span>${translations[currentLang].saveJustification}</span>`;
+        saveBtn.disabled = true; // ناچالاککردن تاوەکو فەرمانبەر دەستکاری تێکستەکە دەکات
+        
+        // چالاککردنەوەی دوگمەکە کاتێک فەرمانبەر دەست دەکات بە نووسین یان گۆڕانکاری
+        input.oninput = () => {
+            saveBtn.disabled = false;
+            input.oninput = null; // لابردنی لیسنەرەکە دوای چالاکبوونەوە
+        };
+        return;
+    }
+
+    const reason = input.value.trim();
     if (!reason) return;
+
+    // بارکردنی دوگمەکە و نیشاندانی سپینەر بۆ ئاگادارکردنەوەی بەکارهێنەر
+    const originalHTML = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
 
     const { error } = await client
         .from('justifications')
         .upsert({ user_id: currentUser.id, date: currentDetailDate, reason: reason }, { onConflict: 'user_id,date' });
 
     if (!error) {
-        updateStatus(translations[currentLang].justificationSuccess, 'success');
-        saveBtn.classList.add('btn-justification-edit');
-        saveBtn.innerHTML = `<i class="fas fa-edit"></i> <span>${translations[currentLang].editJustification}</span>`;
+        // نیشاندانی دڵنیایی سەرکەوتن بە ڕەنگی سەوز و ئایکۆنی چک
+        const successMsg = translations[currentLang].updateSuccess;
+        saveBtn.style.background = "#22c55e";
+        saveBtn.style.color = "white";
+        saveBtn.innerHTML = `<i class="fas fa-check-circle"></i> <span>${successMsg}</span>`;
+
+        setTimeout(() => {
+            // گەڕاندنەوەی دوگمەکە بۆ دۆخی ئاسایی و دووبارە قفڵکردنەوەی تێکستەکە
+            saveBtn.disabled = false;
+            saveBtn.style.background = ""; 
+            saveBtn.style.color = "";
+            input.readOnly = true; 
+            saveBtn.classList.add('btn-justification-edit');
+            saveBtn.innerHTML = `<i class="fas fa-edit"></i> <span>${translations[currentLang].editJustification}</span>`;
+            if (document.getElementById('deleteJustBtn')) document.getElementById('deleteJustBtn').style.display = 'flex';
+            updateStatus(successMsg, 'success');
+        }, 2500);
+    } else {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalHTML;
+        updateStatus(error.message, 'error');
+    }
+}
+
+async function deleteJustification() {
+    if (!currentDetailDate) return;
+    
+    const confirmDel = confirm(translations[currentLang].deleteConfirmMsg);
+    if (!confirmDel) return;
+
+    const delBtn = document.getElementById('deleteJustBtn');
+    const saveBtn = document.getElementById('saveJustBtn');
+    const input = document.getElementById('justificationInput');
+
+    delBtn.disabled = true;
+    delBtn.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i>`;
+
+    const { error } = await client
+        .from('justifications')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('date', currentDetailDate);
+
+    if (!error) {
+        updateStatus(translations[currentLang].deleteSuccess, 'success');
+        fetchJustification(currentDetailDate); // دووبارە ڕێکخستنەوەی مۆداڵەکە بۆ دۆخی بەتاڵ
+    } else {
+        alert("Error: " + error.message);
+        delBtn.disabled = false;
+        delBtn.innerHTML = `<i class="fas fa-trash-alt"></i>`;
     }
 }
 

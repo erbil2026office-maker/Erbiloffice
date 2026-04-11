@@ -20,7 +20,7 @@
     <div class="dashboard-container">
         <div class="login-card">
         <h1 id="welcomeUser">...</h1>
-        <p class="subtitle" id="userRole" data-i18n="employee">فەرمانبەر</p>
+        <p class="subtitle" id="userRole">...</p>
 
         <div class="status-card">
             <div id="liveClock" class="clock-display">00:00:00</div>
@@ -122,9 +122,14 @@
                 <div id="justificationSection" class="justification-area">
                     <label for="justificationInput" data-i18n="justification">ڕوونکردنەوە</label>
                     <textarea id="justificationInput" class="justification-input" data-i18n="justificationPlaceholder" placeholder="..."></textarea>
-                    <button id="saveJustBtn" class="login-btn history-btn" onclick="submitJustification()">
-                        <i class="fas fa-paper-plane"></i> <span data-i18n="saveJustification">ناردنی ڕوونکردنەوە</span>
-                    </button>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button id="saveJustBtn" class="login-btn history-btn" onclick="submitJustification()" style="flex: 1; margin-top: 0 !important;">
+                            <i class="fas fa-paper-plane"></i> <span data-i18n="saveJustification">ناردنی ڕوونکردنەوە</span>
+                        </button>
+                        <button id="deleteJustBtn" class="login-btn btn-delete" onclick="deleteJustification()" style="display:none; margin-top: 0 !important;">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <button onclick="document.getElementById('dayDetails').style.display='none'" class="login-btn">

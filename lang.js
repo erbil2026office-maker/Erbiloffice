@@ -71,6 +71,7 @@ const translations = {
         pwaIOSMsg: "کلیک لە 'Share' بکە و پاشان 'Add to Home Screen' هەڵبژێرە.",
         changeTheme: "گۆڕینی ڕەنگ (تێم)",
         justification: "ڕوونکردنەوەی فەرمی",
+        mgmtSystem: "Management System",
         vpnError: "هەڵە: VPN چالاک کراوە! تکایە بیکوژێنەرەوە بۆ ئەوەی بتوانیت هاتن و دەرچوون تۆمار بکەیت.",
         adminDashboardTitle: "کۆمسیۆنی باڵای سەربەخۆی هەڵبژاردنەکان - هەولێر",
         adminDashboardTitleShort: "کۆمسیۆنی باڵا - ئۆفیسی هەولێر",
@@ -116,6 +117,10 @@ const translations = {
         editJustification: "دەستکاریکردنی ڕوونکردنەوە",
         justificationPlaceholder: "هۆکاری درەنگ هاتن یان نەهاتن لێرە بنووسە...",
         justificationSuccess: "ڕوونکردنەوەکەت بە سەرکەوتوویی تۆمار کرا.",
+        deleteJustification: "سڕینەوەی ڕوونکردنەوە",
+        deleteConfirmMsg: "ئایا دڵنیایت لە سڕینەوەی ئەم ڕوونکردنەوەیە بە تەواوەتی؟",
+        deleteSuccess: "ڕوونکردنەوەکە بە سەرکەوتوویی سڕایەوە",
+        updateSuccess: "چاککردن سەرکەوتوو بوو",
         print: "چاپکردن",
         copyrightText: "هەموو مافێك پارێزراوە بۆ ئۆفیسی پارێزگای هەولێر",
         developedBy: "گەشەپێدراوە لەلایەن"
@@ -190,6 +195,7 @@ const translations = {
         pwaIOSMsg: "اضغط على 'Share' ثم اختر 'Add to Home Screen'.",
         changeTheme: "تغيير المظهر",
         justification: "تبرير رسمي",
+        mgmtSystem: "Management System",
         vpnError: "خطأ: تم اكتشاف VPN! يرجى إيقاف تشغيله لتتمكن من تسجيل الحضور والانصراف.",
         adminDashboardTitle: "المفوضیة العليا المستقلة للانتخابات - أربيل",
         adminDashboardTitleShort: "المفوضية العليا - مکتب أربيل",
@@ -235,6 +241,10 @@ const translations = {
         editJustification: "تعديل التبرير",
         justificationPlaceholder: "اكتب سبب التأخير أو الغياب هنا...",
         justificationSuccess: "تم تسجيل التبرير بنجاح.",
+        deleteJustification: "حذف التبرير",
+        deleteConfirmMsg: "هل أنت متأكد من حذف هذا التبرير نهائياً؟",
+        deleteSuccess: "تم حذف التبرير بنجاح",
+        updateSuccess: "تم التعديل بنجاح",
         print: "طباعة",
         copyrightText: "جميع الحقوق محفوظة لمكتب محافظة أربيل",
         developedBy: "تم التطوير بواسطة"
@@ -281,7 +291,9 @@ function setLang(lang) { // Renamed from selectLanguage to setLang as per index.
     currentLang = lang;
     localStorage.setItem('lang', currentLang);
     applyLanguage();
-    document.getElementById('dropdown-options').classList.remove('show');
+    if (document.getElementById('dropdown-options')) document.getElementById('dropdown-options').classList.remove('show');
+    // ئاگادارکردنەوەی هەموو پەڕەکە کە زمان گۆڕاوە بۆ نوێکردنەوەی دەقە داینامیکییەکان
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: lang }));
 }
 
 document.addEventListener('DOMContentLoaded', applyLanguage);
