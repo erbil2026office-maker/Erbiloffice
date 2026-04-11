@@ -15,12 +15,34 @@ let currentFilters = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // پشکنینی ئادمین
-    const { data: { user } } = await adminClient.auth.getUser();
-    if (!user) { location.href = 'index.html'; return; }
+    // ١. پشکنینی خێرای سیژن (Session) بۆ پاراستنی لاپەڕەکە پێش هەر کارێک
+    const { data: { session }, error: sessionError } = await adminClient.auth.getSession();
+    
+    if (sessionError || !session) {
+        window.location.replace('index.html');
+        return;
+    }
 
-    const { data: profile } = await adminClient.from('profiles').select('role').eq('id', user.id).single();
-    if (profile.role !== 'admin') { location.href = 'dashboard.html'; return; }
+    // ٢. پشکنینی ووردی پڕۆفایل بۆ دڵنیابوونەوە لەوەی ئادمینە نەک فەرمانبەری ئاسایی
+    const { data: profile, error: profError } = await adminClient
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+    if (profError || !profile || profile.role !== 'admin') {
+        window.location.replace(profile?.role === 'employee' ? 'dashboard.html' : 'index.html');
+        return;
+    }
+
+    const user = session.user;
+
+    // ٣. چاودێریکردنی دۆخی چوونەژوورەوە (بۆ دەرکردنی یەکسەری ئادمین ئەگەر سیژنەکەی بەسەرچوو)
+    adminClient.auth.onAuthStateChange((event, currentSession) => {
+        if (event === 'SIGNED_OUT' || !currentSession) {
+            window.location.replace('index.html');
+        }
+    });
 
     // --- ڕێکخستنی Real-time Presence ---
     const presenceChannel = adminClient.channel('admin_online_status');
