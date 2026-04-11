@@ -39,6 +39,15 @@
             </div>
         </div>
 
+        <!-- Mobile Stats Toggle -->
+        <div class="mobile-stats-toggle" onclick="toggleStatsMobile()">
+            <div class="toggle-content">
+                <i class="fas fa-chart-pie"></i>
+                <span id="statsToggleText" data-i18n="showStats">نیشاندانی ئامارەکان</span>
+            </div>
+            <i class="fas fa-chevron-down toggle-arrow"></i>
+        </div>
+
         <!-- Stats Overview -->
         <div class="stats-grid">
             <div class="stat-card stat-green">
@@ -152,6 +161,15 @@
         </section>
 
         <!-- Attendance List -->
+        <!-- Mobile Attendance Toggle -->
+        <div class="mobile-attendance-toggle" onclick="toggleAttendanceMobile()">
+            <div class="toggle-content">
+                <i class="fas fa-clipboard-list"></i>
+                <span id="attendanceToggleText" data-i18n="showAttendanceList">نیشاندانی لیستی ئامادەبووان</span>
+            </div>
+            <i class="fas fa-chevron-down toggle-arrow"></i>
+        </div>
+
         <div class="attendance-container">
             <h3 class="section-title"><i class="fas fa-list-ul"></i> <span data-i18n="attendanceListTitle">لیستی ئامادەبووان</span></h3>
             <div id="attendanceList">

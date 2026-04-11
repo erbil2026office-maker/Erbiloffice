@@ -370,6 +370,30 @@ function viewDetails(userId) {
     document.getElementById('justModal').style.display = 'flex';
 }
 
+function toggleStatsMobile() {
+    const statsGrid = document.querySelector('.stats-grid');
+    const toggleBtn = document.querySelector('.mobile-stats-toggle');
+    const toggleText = document.getElementById('statsToggleText');
+    
+    const isExpanded = statsGrid.classList.toggle('expanded');
+    toggleBtn.classList.toggle('active');
+    
+    // گۆڕینی تێکستەکە بەپێی زمان
+    toggleText.innerText = isExpanded ? translations[currentLang].hideStats : translations[currentLang].showStats;
+}
+
+function toggleAttendanceMobile() {
+    const attendanceContainer = document.querySelector('.attendance-container');
+    const toggleBtn = document.querySelector('.mobile-attendance-toggle');
+    const toggleText = document.getElementById('attendanceToggleText');
+    
+    const isExpanded = attendanceContainer.classList.toggle('expanded');
+    toggleBtn.classList.toggle('active');
+    
+    // گۆڕینی تێکستەکە بەپێی زمان
+    toggleText.innerText = isExpanded ? translations[currentLang].hideAttendanceList : translations[currentLang].showAttendanceList;
+}
+
 // داخستنی مۆداڵەکە بە کلیک لە دەرەوە
 function closeJustModal(event) {
     if (event.target.id === 'justModal') {

@@ -82,6 +82,39 @@
     transition: all 0.3s ease;
 }
 
+/* Mobile Toggle Button Styles (Stats & Attendance) */
+.mobile-attendance-toggle,
+.mobile-stats-toggle {
+    display: none; /* Default hidden on desktop */
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 12px 20px;
+    border-radius: 16px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+}
+
+.toggle-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--primary);
+}
+
+.toggle-arrow {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.admin-header h1 { transition: font-size 0.3s ease; }
+
 .admin-icon-btn:hover {
     background: rgba(255, 255, 255, 0.25);
     transform: translateY(-3px);
@@ -168,6 +201,51 @@
         text-align: center;
         gap: 20px;
     }
+}
+
+/* نوێکردنەوەی بەشی وەڵامدەرەوەی کارتەکان بۆ دوو ڕیز لە مۆبایل */
+@media (max-width: 600px) {
+    .mobile-stats-toggle {
+        display: flex; /* Show only on mobile */
+    }
+
+    .stats-grid {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        margin-bottom: 0;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+        transform: translateY(-10px);
+    }
+
+    .stats-grid.expanded {
+        max-height: 800px; /* Large enough to fit cards */
+        opacity: 1;
+        margin-bottom: 30px;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    .mobile-stats-toggle.active .toggle-arrow {
+        transform: rotate(180deg);
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    .stat-card {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+        border-radius: 12px !important;
+    }
+    .stat-card i { padding: 6px !important; font-size: 1rem !important; }
+    .stat-info .stat-label { font-size: 0.6rem !important; }
+    .stat-info .stat-value { font-size: 0.95rem !important; }
+    
+    .section-title { font-size: 1.1rem !important; margin-bottom: 15px !important; }
+    .title-icon-box { width: 34px !important; height: 34px !important; font-size: 0.9rem !important; }
 }
 
 .section-title {
@@ -569,12 +647,97 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 }
 
 @media (max-width: 1000px) {
-    .attendance-header-row { display: none; }
-    .attendance-item {
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        padding: 20px;
+    /* ڕێگری لە گۆڕینی خشتەکە بۆ مۆدێلی کارتی ستوونی و هێشتنەوەی وەک خشتە */
+    .attendance-container {
+        overflow-x: auto; /* زیادکردنی سکڕۆڵی ئاسۆیی */
+        padding: 10px !important;
     }
+    
+    #attendanceList {
+        min-width: 850px; /* دڵنیابوونەوە لەوەی ستوونەکان تێکەڵ نابن */
+    }
+
+    .attendance-header-row, .attendance-item {
+        padding: 12px 15px !important;
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 600px) {
+    .mobile-attendance-toggle {
+        display: flex; /* Show only on mobile */
+    }
+
+    .attendance-container {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateY(-10px);
+        margin-top: 0 !important;
+    }
+
+    .attendance-container.expanded {
+        max-height: 5000px; /* Large enough for long lists */
+        opacity: 1;
+        transform: translateY(0);
+        margin-top: 15px !important;
+        overflow-x: auto !important; /* چالاککردنەوەی سکڕۆڵی ئاسۆیی کاتێک لیستەکە کراوەیە */
+    }
+
+    .mobile-attendance-toggle.active .toggle-arrow {
+        transform: rotate(180deg);
+    }
+
+    .admin-container { margin: 15px auto !important; padding: 0 12px !important; }
+    
+    .admin-header { 
+        padding: 15px 20px !important; 
+        flex-direction: row !important; 
+        text-align: right !important;
+        gap: 10px !important;
+    }
+    .admin-header h1 { font-size: 1.1rem !important; }
+    .admin-header p { font-size: 0.65rem !important; }
+    .admin-logo-wrapper { width: 55px !important; height: 55px !important; }
+    .admin-badge { font-size: 0.6rem !important; padding: 2px 8px !important; }
+    .admin-icon-btn { width: 36px !important; height: 36px !important; font-size: 0.9rem !important; }
+
+    /* کۆمپاکتکردنی لیستی ئادمینەکان */
+    .admins-display-area { 
+        padding: 8px 15px !important; 
+        margin-bottom: 20px !important;
+        gap: 12px !important;
+    }
+    .admins-label { font-size: 0.7rem !important; }
+    .admin-chip { padding: 4px 10px !important; font-size: 0.75rem !important; }
+    .admin-chip i { width: 24px !important; height: 24px !important; font-size: 0.7rem !important; }
+    .admins-display-area::after { top: 8px; bottom: 8px; width: 3px; }
+
+    /* فلتەرەکان لە مۆبایل */
+    .filter-section.glass-card {
+        padding: 12px 15px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .filter-grid { 
+        grid-template-columns: 1fr 1fr !important; 
+        gap: 10px !important; 
+    }
+
+    .filter-item label {
+        font-size: 0.65rem !important;
+        margin-bottom: 4px !important;
+        gap: 4px !important;
+    }
+
+    .filter-item:first-child { grid-column: span 2; } /* گەڕانی ناو پڕ بە شاشە */
+    .filter-actions { grid-column: span 1; } /* دوگمەی پرێنت لە تەنیشت دۆخ */
+    .print-btn { width: 100% !important; height: 38px !important; font-size: 0.8rem !important; padding: 0 10px !important; }
+    
+    .glass-input, .select-trigger { height: 38px !important; font-size: 0.8rem !important; }
+    
+    .count-badge { padding: 4px 10px !important; font-size: 0.65rem !important; }
 }
 
 .status-pill {
@@ -705,4 +868,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 }
 
 .admin-chip:hover {
-    transform: tran
+    transform: translateY(-3px);
+    border-color: var(--primary);
+    box-shadow: 0 8px 15px rgba(0, 98, 255, 0.1);
+    background: #fff;
+}
