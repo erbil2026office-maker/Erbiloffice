@@ -17,8 +17,10 @@
         <header class="admin-header">
             <div class="header-titles">
                 <div class="admin-badge">Management System</div>
-                <h1 data-i18n="adminDashboardTitle">پانێڵی بەڕێوەبەر</h1>
-                <p id="adminStatus" data-i18n="generalOffice">چاودێری گشتی ئۆفیسی هەولێر</p>
+                <h1 class="desktop-title" data-i18n="adminDashboardTitle">کۆمسیۆنی باڵای سەربەخۆی هەڵبژاردنەکان - هەولێر</h1>
+                <h1 class="mobile-title" data-i18n="adminDashboardTitleShort">کۆمسیۆنی باڵا - هەولێر</h1>
+                <p id="adminStatus" class="desktop-subtitle" data-i18n="generalOffice">سیستەمی چاودێری دەوامی فەرمانبەران لە ئۆفیسی پارێزگای هەولێر</p>
+                <p class="mobile-subtitle" data-i18n="generalOfficeShort">چاودێری دەوامی هەولێر</p>
             </div>
             <div class="header-side-content">
                 <div class="admin-logo-wrapper">
@@ -32,8 +34,12 @@
         </header>
 
         <!-- Admins Section -->
-        <div id="adminsSection" class="admins-display-area" style="display: none;">
-            <span class="admins-label"><i class="fas fa-user-shield"></i> <span data-i18n="adminLabel">بەڕێوەبەرانی سیستم:</span></span>
+        <div id="adminsSection" class="admins-display-area" style="display: none;" onclick="toggleAdminsMobile()">
+            <div class="toggle-content">
+                <i class="fas fa-user-shield"></i>
+                <span class="admins-label" data-i18n="adminLabel">بەڕێوەبەرانی سیستم:</span>
+            </div>
+            <i class="fas fa-chevron-down toggle-arrow"></i>
             <div id="adminsList" class="admins-chips-container">
                 <!-- Admin names will be injected here -->
             </div>

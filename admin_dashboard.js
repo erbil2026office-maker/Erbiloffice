@@ -209,6 +209,7 @@ function renderAdmins(admins) {
     
     if (admins && admins.length > 0) {
         container.style.display = 'flex';
+        
         listDiv.innerHTML = admins.map(adm => {
             // لۆجیکی نوێ: گەڕان لە ناو تەواوی لیستی Presence بۆ دۆزینەوەی ئایدی بەکارهێنەر
             const isOnline = Object.values(onlineAdmins).flat().some(presence => presence.user_id === adm.id);
@@ -219,8 +220,19 @@ function renderAdmins(admins) {
                 </div>
             `;
         }).join('');
+
+        // هەمیشە کڵاسی درۆپ داون چالاک بکە بۆ مۆبایل
+        container.classList.add('mobile-admin-dropdown');
     } else {
         container.style.display = 'none';
+        container.classList.remove('mobile-admin-dropdown', 'dropdown-open');
+    }
+}
+
+function toggleAdminsMobile() {
+    const container = document.getElementById('adminsSection');
+    if (window.innerWidth <= 600 && container.classList.contains('mobile-admin-dropdown')) {
+        container.classList.toggle('dropdown-open');
     }
 }
 
@@ -405,4 +417,8 @@ function closeJustModal(event) {
 
 function handlePrint() {
     alert("ئامادەکاری بۆ چاپکردن... (دیزاینی ڕاپۆرتەکە دواتر جێبەجێ دەکرێت)");
+}
+async function handleLogout() {
+    await adminClient.auth.signOut();
+    location.href = 'index.html';
 }
