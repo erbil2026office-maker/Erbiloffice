@@ -539,32 +539,15 @@ input:focus + .input-icon { color: var(--accent-pink); }
     }
 
     .login-card {
-        width: 92%;
+        width: 100%;
         padding: 20px 18px;
-        border-radius: 22px;
+        border-radius: 20px;
         max-width: none;
     }
 
-    .logo-box {
-        width: 55px;
-        height: 55px;
-        margin-bottom: 10px;
-        border-radius: 15px;
-    }
-
-    h1 { font-size: 1.35rem; }
-    .subtitle { font-size: 0.75rem; margin-bottom: 15px; }
-
-    .input-group { margin-bottom: 12px; }
-    label { font-size: 0.75rem; margin-bottom: 5px; }
-    input { padding: 9px 38px 9px 36px; font-size: 0.85rem; }
-    .input-icon { right: 12px; font-size: 0.85rem; }
-    .eye-icon { left: 12px; font-size: 0.85rem; }
-
-    .login-btn { padding: 12px; font-size: 0.95rem; border-radius: 12px; }
-
     .top-controls {
-        padding: 10px 15px;
+        top: 10px;
+        right: 10px;
         gap: 8px;
     }
 
@@ -1120,10 +1103,9 @@ min-height: 80px; /* Ensure consistent height for both items */
     opacity: 0.6;
     margin-top: 5px;
 }
-
 @media (max-width: 640px) {
-    .developer-credit { margin-top: 18px; font-size: 0.6rem; }
-    .copyright-text { font-size: 0.6rem; margin-bottom: 5px; }
+    .developer-credit { margin-top: 18px; font-size: 0.65rem; }
+    .copyright-text { font-size: 0.58rem; margin-bottom: 5px; }
 }
 
 .developer-credit:hover { opacity: 1; color: var(--primary); }
