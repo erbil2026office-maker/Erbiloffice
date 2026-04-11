@@ -1104,8 +1104,8 @@ min-height: 80px; /* Ensure consistent height for both items */
     margin-top: 5px;
 }
 @media (max-width: 640px) {
-    .developer-credit { margin-top: 18px; font-size: 0.65rem; }
-    .copyright-text { font-size: 0.58rem; margin-bottom: 5px; }
+    .developer-credit { margin-top: 18px; font-size: 0.6rem; }
+    .copyright-text { font-size: 0.6rem; margin-bottom: 5px; }
 }
 
 .developer-credit:hover { opacity: 1; color: var(--primary); }
