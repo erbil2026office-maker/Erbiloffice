@@ -168,8 +168,15 @@ function applyFiltersLocally() {
 function toggleCustomDropdown(id) {
     const el = document.getElementById(id);
     const isActive = el.classList.contains('active');
+    
+    // داخستنی هەموو لیستەکان و گەڕاندنەوەی ئاستی خانەکان بۆ دۆخی ئاسایی
     document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('active'));
-    if (!isActive) el.classList.add('active');
+    document.querySelectorAll('.filter-item').forEach(item => item.classList.remove('dropdown-active'));
+
+    if (!isActive) {
+        el.classList.add('active');
+        el.closest('.filter-item').classList.add('dropdown-active'); // بەرزکردنەوەی خانە باوکەکە
+    }
 }
 
 function selectOption(id, value, text, shouldReload = false) {
@@ -179,6 +186,7 @@ function selectOption(id, value, text, shouldReload = false) {
         opt.classList.toggle('selected', opt.innerText === text);
     });
     el.classList.remove('active');
+    el.closest('.filter-item').classList.remove('dropdown-active');
 
     if (id === 'branchSelect') currentFilters.branch = value;
     if (id === 'statusSelect') currentFilters.status = value;
@@ -191,6 +199,7 @@ function selectOption(id, value, text, shouldReload = false) {
 window.addEventListener('click', (e) => {
     if (!e.target.closest('.custom-select')) {
         document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.filter-item').forEach(item => item.classList.remove('dropdown-active'));
     }
 });
 
@@ -353,8 +362,11 @@ function viewDetails(userId) {
     const staff = staffCache.find(s => s.id === userId);
     const just = justificationsCache.find(j => j.user_id === userId);
 
-    document.getElementById('justUserTitle').innerText = `ڕوونکردنەوەی: ${staff ? staff.full_name : 'فەرمانبەر'}`;
-    document.getElementById('justTextContent').innerText = just ? just.reason : 'بۆ ئەم ڕێکەوتە هیچ ڕوونکردنەوەیەک نەنووسراوە.';
+    const titlePrefix = translations[currentLang].justificationOf;
+    const staffName = staff ? staff.full_name : translations[currentLang].employee;
+
+    document.getElementById('justUserTitle').innerText = `${titlePrefix} ${staffName}`;
+    document.getElementById('justTextContent').innerText = just ? just.reason : translations[currentLang].noJustRecorded;
     document.getElementById('justModal').style.display = 'flex';
 }
 
