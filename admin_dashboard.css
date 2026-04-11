@@ -532,14 +532,14 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-header-row {
     display: grid;
-    grid-template-columns: 1.8fr 1.8fr 1.5fr 1fr 1.2fr 0.6fr;
-    padding: 18px 25px;
+    grid-template-columns: 1.5fr 1.5fr 1.2fr 0.8fr 1fr 0.5fr;
+    padding: 10px 15px;
     background: linear-gradient(to left, rgba(var(--primary-rgb), 0.08), transparent);
     border-bottom: 2px solid var(--primary);
-    border-radius: 18px 18px 5px 5px;
-    margin-bottom: 15px;
+    border-radius: 12px 12px 2px 2px;
+    margin-bottom: 8px;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     color: var(--primary);
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -548,8 +548,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 }
 
 .header-icon {
-    margin-left: 8px;
-    font-size: 0.9rem;
+    margin-left: 5px;
+    font-size: 0.8rem;
     opacity: 0.9;
     color: var(--primary);
 }
@@ -560,8 +560,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-item {
     display: grid;
-    grid-template-columns: 1.8fr 1.8fr 1.5fr 1fr 1.2fr 0.6fr;
-    padding: 14px 25px;
+    grid-template-columns: 1.5fr 1.5fr 1.2fr 0.8fr 1fr 0.5fr;
+    padding: 6px 15px;
     border-bottom: 1px solid var(--border-color);
     align-items: center;
     transition: all 0.2s ease;
@@ -574,15 +574,15 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-item:last-child { border-bottom: none; }
 
-.emp-name { font-weight: 700; color: var(--text-main); font-size: 0.95rem; }
-.emp-branch-col { font-size: 0.85rem; color: var(--text-sub); font-weight: 600; }
+.emp-name { font-weight: 700; color: var(--text-main); font-size: 0.82rem; }
+.emp-branch-col { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; }
 
 .emp-time-col {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
+    font-family: 'JetBrains Mono', 'monospace';
+    font-size: 0.72rem;
     font-weight: bold;
 }
 
@@ -590,9 +590,9 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .time-out { color: #dc2626; }
 
 .class-badge {
-    padding: 4px 10px;
-    border-radius: 8px;
-    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.65rem;
     font-weight: 700;
     display: inline-block;
 }
@@ -604,7 +604,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 }
 
 .class-badge i {
-    font-size: 1.1rem; /* قەبارەی ئایکۆنەکە */
+    font-size: 0.9rem;
 }
 
 .badge-early { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
@@ -616,15 +616,15 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .just-col { display: flex; justify-content: center; }
 
 .just-icon-wrapper {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px;
+    border-radius: 8px;
     background: var(--input-bg);
     color: var(--text-sub);
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     position: relative;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -673,8 +673,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     }
 
     .attendance-header-row, .attendance-item {
-        padding: 12px 15px !important;
-        font-size: 0.85rem !important;
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
     }
 }
 
@@ -836,6 +836,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
         margin-bottom: 10px !important;
         border: 1px solid var(--border-color) !important;
         transform: translateY(0);
+        overflow: visible !important; /* ڕێگەدان بە لیستەکان تا بەسەر کارتەکانی تردا بکەون */
     }
 
     .filter-grid { 
@@ -859,9 +860,9 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 }
 
 .status-pill {
-    padding: 4px 12px;
+    padding: 2px 10px;
     border-radius: 50px;
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 700;
     display: inline-block;
 }
@@ -938,9 +939,9 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .admin-chip {
     background: var(--card-bg);
     color: var(--text-main);
-    padding: 6px 16px;
+    padding: 4px 14px;
     border-radius: 14px;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 700;
     border: 1px solid var(--border-color);
     display: flex;
