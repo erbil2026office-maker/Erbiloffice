@@ -534,7 +534,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-header-row {
     display: grid;
-    grid-template-columns: 1.5fr 1.5fr 1.2fr 0.8fr 1fr 0.5fr;
+    grid-template-columns: 1.5fr 1.2fr 2fr 1fr 1.7fr 0.8fr; /* ڕێکخستنی پانتایی ستوونەکان بۆ کاتی ئاسۆیی */
     padding: 6px 12px; /* کەمکردنەوەی بەرزی سەردێڕ */
     background: linear-gradient(to left, rgba(var(--primary-rgb), 0.08), transparent);
     border-bottom: 2px solid var(--primary); /* هێڵێکی تۆختر بۆ سەردێڕ */
@@ -558,11 +558,11 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-item {
     display: grid;
-    grid-template-columns: 1.5fr 1.5fr 1.2fr 0.8fr 1fr 0.5fr;
-    padding: 5px 12px; /* کەمترین بۆشایی ستوونی */
+    grid-template-columns: 1.5fr 1.2fr 2fr 1fr 1.7fr 0.8fr; /* هاوتاکردن لەگەڵ سەردێڕەکە */
+    padding: 2px 12px; /* بۆشایی کەم و هاوسەنگ بۆ سەرەوە و خوارەوە */
     border-bottom: 1.2px solid var(--border-color) !important; /* بەکارهێنانی ڕەنگی بۆردەری سیستەم بۆ دیاربوون **/
     align-items: center;
-    min-height: 28px; /* دڵنیابوونەوە لە بەرزاییەکی کەم و ڕێک */
+    min-height: 32px; /* کەمکردنەوەی بەرزی ڕیز چونکە کاتەکان لە تەنیشت یەکترن */
     transition: all 0.2s ease;
     background: var(--card-bg);
 }
@@ -605,17 +605,34 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .emp-time-col {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    gap: 0px; /* لابردنی بۆشایی نێوان کاتی هاتن و دەرچوون */
+    flex-direction: row; /* نیشاندانی کاتەکان لە تەنیشت یەکتر */
+    gap: 6px; /* بۆشایی نێوان باجەکان */
     font-family: 'JetBrains Mono', 'monospace';
-    font-size: 0.68rem;
-    font-weight: bold;
-    line-height: 1.1;
+    line-height: 1; /* دڵنیابوونەوە لەوەی تێکستەکە بۆشایی زیادەی نییە */
+    align-items: center;
 }
 
-.time-in { color: #16a34a; }
-.time-out { color: #dc2626; }
+.time-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* بۆشایی نێوان ئایکۆن و کات */
+    padding: 2px 6px; /* بۆشایی ناوەوەی باجەکە */
+    border-radius: 6px; /* لێواری خڕ */
+    font-size: 0.65rem; /* قەبارەی فۆنت */
+    font-weight: 700;
+    white-space: nowrap; /* ڕێگری لە شکاندنی هێڵ */
+    width: fit-content; /* قەبارەی باجەکە بەپێی ناوەڕۆکەکەی */
+}
+
+.time-badge-in {
+    background: rgba(34, 197, 94, 0.1); /* ڕەنگی سەوزی کاڵ */
+    color: #16a34a; /* ڕەنگی سەوز */
+}
+
+.time-badge-out {
+    background: rgba(239, 68, 68, 0.1); /* ڕەنگی سووری کاڵ */
+    color: #dc2626; /* ڕەنگی سوور */
+}
 
 .class-badge {
     padding: 1px 6px;
@@ -717,7 +734,6 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
     .attendance-header-row, .attendance-item {
         padding: 3px 12px !important;
-        padding: 6px 12px !important; /* هاوسەنگی بۆشایی لە مۆبایلیشدا */
         font-size: 0.75rem !important;
     }
 }

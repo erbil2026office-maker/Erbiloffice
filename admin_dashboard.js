@@ -381,14 +381,14 @@ function renderAttendance(attendance, employees) {
             const tOut = record?.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '--:--';
             const statusLabel = record ? `<span class="status-pill status-present">${translations[currentLang].statusPresent}</span>` : `<span class="status-pill status-absent">${translations[currentLang].statusAbsent}</span>`;
             
-            row.innerHTML = `
+           row.innerHTML = `
                 <div class="emp-name-col">
                     <span class="emp-name">${isOnDuty ? `<span class="on-duty-pulse" title="${translations[currentLang].onDuty}"></span>` : ''}${emp.full_name}</span>
                 </div>
                 <div class="emp-branch-col">${branch}</div>
                 <div class="emp-time-col">
-                    <span class="time-in"><i class="fas fa-long-arrow-alt-down"></i> ${tIn}</span>
-                    <span class="time-out"><i class="fas fa-long-arrow-alt-up"></i> ${tOut}</span>
+                    <span class="time-badge time-badge-in"><i class="fas fa-long-arrow-alt-down"></i> ${tIn}</span>
+                    <span class="time-badge time-badge-out"><i class="fas fa-long-arrow-alt-up"></i> ${tOut}</span>
                 </div>
                 <div>${statusLabel}</div>
                 <div class="class-badge-col">
