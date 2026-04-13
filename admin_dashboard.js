@@ -8,6 +8,8 @@ let justificationsCache = []; // پاشەکەوتکردنی ڕوونکردنەو
 let allAdminsCached = []; // بۆ هەڵگرتنی لیستی ئادمینەکان و نوێکردنەوەی دۆخی ئۆنلاین
 let onlineAdmins = {};    // بۆ هەڵگرتنی ئەو ئادمینانەی ئێستا لەسەر هێڵن
 let selectedUserIdForReset = null; // بۆ هەڵگرتنی ئایدی ئەو بەکارهێنەرەی ئێستا مۆداڵەکەی بۆ کراوەتەوە
+let branchesCache = []; // پاشەکەوتکردنی لیستی هەموو بنکەکان
+let selectedBranchInModal = null; // بۆ هەڵگرتنی بنکەی دیاریکراو لە ناو مۆداڵ
 
 let currentFilters = {
     branch: 'all',
@@ -83,11 +85,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadBranches() {
     try {
-        const { data, error } = await adminClient.from('branches').select('*').order('branch_name');
+        const { data, error } = await adminClient.from('branches').select('*').order('branch_id');
         if (error) throw error;
         
+        // ڕیزکردنی بنکەکان بە شێوەیەکی ژمارەیی لە بچووکەوە بۆ گەورە
+        branchesCache = data ? [...data].sort((a, b) => parseInt(a.branch_id) - parseInt(b.branch_id)) : [];
+        
         const branchOptions = document.getElementById('branchOptions');
-        data?.forEach(b => {
+        branchesCache.forEach(b => {
             const div = document.createElement('div');
             div.className = 'option';
             div.innerText = `${b.branch_id} | ${b.branch_name}`;
@@ -203,8 +208,19 @@ function applyFiltersLocally() {
 }
 
 // --- Custom Dropdown Logic ---
-function toggleCustomDropdown(id) {
+function toggleCustomDropdown(event, id) {
+    // پشکنین بۆ ئەوەی بزانین ئایا پارامیتەری یەکەم دەقە (ID) یان ڕووداو (Event)
+    // ئەمە کێشەی فلتەرەکان چارەسەر دەکات کە بە شێوازە کۆنەکە بانگ دەکران
+    if (typeof event === 'string') {
+        id = event;
+        event = window.event || null;
+    }
+
+    if (event && event.stopPropagation) event.stopPropagation();
+    
     const el = document.getElementById(id);
+    if (!el) return;
+
     const isActive = el.classList.contains('active');
     
     // داخستنی هەموو لیستەکان و گەڕاندنەوەی ئاستی خانەکان بۆ دۆخی ئاسایی
@@ -213,7 +229,10 @@ function toggleCustomDropdown(id) {
 
     if (!isActive) {
         el.classList.add('active');
-        el.closest('.filter-item').classList.add('dropdown-active'); // بەرزکردنەوەی خانە باوکەکە
+        const filterItem = el.closest('.filter-item');
+        if (filterItem) {
+            filterItem.classList.add('dropdown-active'); // تەنها ئەگەر خانەی فلتەر بوو بەرزبێتەوە
+        }
     }
 }
 
@@ -286,8 +305,14 @@ function renderAttendance(attendance, employees) {
     const listDiv = document.getElementById('attendanceList');
     const sectionTitle = document.querySelector('.attendance-container .section-title');
     
+    // هەژمارکردنی ئەو کەسانەی کە ئێستا لە دەوامدان (هاتنیان کردووە و دەرنەچوون)
+    const onDutyCount = employees.filter(emp => {
+        const record = attendance.find(a => a.user_id === emp.id);
+        return record && !record.check_out_time;
+    }).length;
+
     // نوێکردنەوەی تایتڵ و زیادکردنی باجی ژمارە
-    sectionTitle.innerHTML = `<div class="title-icon-box"><i class="fas fa-list-ul"></i></div> <span>${translations[currentLang].attendanceListTitle}</span> <span class="count-badge">${employees.length} ${translations[currentLang].countPerson}</span>`;
+    sectionTitle.innerHTML = `<div class="title-icon-box"><i class="fas fa-list-ul"></i></div> <span>${translations[currentLang].attendanceListTitle}</span> <span class="count-badge" title="${translations[currentLang].onDuty}">${onDutyCount} ${translations[currentLang].onDuty}</span>`;
 
     // دروستکردنی سەردێڕی خشتەکە بۆ لاپتۆپ
     listDiv.innerHTML = `
@@ -400,6 +425,9 @@ function renderAttendance(attendance, employees) {
                     <div class="just-icon-wrapper ${hasJustification ? 'active' : ''}" onclick="viewDetails('${emp.id}')" title="${hasJustification ? just.reason : translations[currentLang].recordNotFound}">
                         <i class="fas fa-file-signature"></i>
                     </div>
+                    <div class="settings-icon-wrapper" onclick="openEmployeeSettings('${emp.id}')" title="${translations[currentLang].empSettings}">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
                 </div>
             `;
             section.appendChild(row);
@@ -418,7 +446,6 @@ function renderAttendance(attendance, employees) {
 }
 
 function viewDetails(userId) {
-    selectedUserIdForReset = userId; // پاشەکەوتکردنی ئایدی بۆ کرداری ڕیسێت
     const staff = staffCache.find(s => s.id === userId);
     const just = justificationsCache.find(j => j.user_id === userId);
 
@@ -428,6 +455,87 @@ function viewDetails(userId) {
     document.getElementById('justUserTitle').innerText = `${titlePrefix} ${staffName}`;
     document.getElementById('justTextContent').innerText = just ? just.reason : translations[currentLang].noJustRecorded;
     document.getElementById('justModal').style.display = 'flex';
+}
+
+async function openEmployeeSettings(userId) {
+    const emp = staffCache.find(s => s.id === userId);
+    if (!emp) return;
+    selectedUserIdForReset = userId;
+
+    let modal = document.getElementById('empSettingsModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'empSettingsModal';
+        modal.className = 'modal-overlay';
+        modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+        document.body.appendChild(modal);
+    }
+
+    const currentBranchName = branchesCache.find(b => b.branch_id === emp.branch_id)?.branch_name || translations[currentLang].allBranches;
+    selectedBranchInModal = emp.branch_id;
+
+    const branchOptionsHtml = branchesCache.map(b => `
+        <div class="option ${emp.branch_id === b.branch_id ? 'selected' : ''}" onclick="selectModalBranch(event, '${b.branch_id}', '${b.branch_name}')">
+            ${b.branch_id} | ${b.branch_name}
+        </div>
+    `).join('');
+
+    modal.innerHTML = `
+        <div class="modal-window" style="max-width:340px; padding:20px; border-radius:22px;">
+            <div class="modal-icon" style="font-size:1.6rem; margin-bottom:5px; color:var(--primary);"><i class="fas fa-user-cog"></i></div>
+            <h3 style="margin-bottom:2px; font-size:1.1rem; color:var(--text-main);">${translations[currentLang].empSettings}</h3>
+            <p style="font-size:0.8rem; font-weight:600; color:var(--text-sub); margin-bottom:15px;">${emp.full_name}</p>
+            <div class="settings-grid">
+                <div class="settings-group">
+                    <label class="settings-label"><i class="fas fa-map-marker-alt"></i> ${translations[currentLang].changeBranch}</label>
+                    <div class="custom-select" id="modalBranchSelect" onclick="toggleCustomDropdown(event, 'modalBranchSelect')">
+                        <div class="select-trigger" style="height:36px; font-size:0.8rem;">
+                            <span class="selected-text">${currentBranchName}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="options-list">${branchOptionsHtml}</div>
+                    </div>
+                    <button class="settings-save-btn" onclick="updateEmployeeBranch('${userId}')"><i class="fas fa-save"></i> ${translations[currentLang].change}</button>
+                </div>
+                <div class="settings-group reset-group">
+                    <label class="settings-label"><i class="fas fa-mobile-alt"></i> ${translations[currentLang].device}</label>
+                    <div class="select-trigger device-info-trigger">
+                        <span class="selected-text">${emp.device_id ? 'ئامێری پەیوەستکراو (Linked)' : 'ئامێر بەردەست نییە'}</span>
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <button class="settings-save-btn btn-danger-modern" onclick="resetDeviceID()"><i class="fas fa-redo"></i> ${translations[currentLang].resetDevice}</button>
+                </div>
+            </div>
+            <button class="modal-close-link" onclick="document.getElementById('empSettingsModal').style.display='none'"><i class="fas fa-times"></i> ${translations[currentLang].close}</button>
+        </div>
+    `;
+    modal.style.display = 'flex';
+}
+
+function selectModalBranch(event, branchId, branchName) {
+    if (event) event.stopPropagation(); // ڕێگری لە بڵاوبوونەوەی ڕووداوی کلیکەکە
+    selectedBranchInModal = branchId;
+    const trigger = document.querySelector('#modalBranchSelect .selected-text');
+    if (trigger) trigger.innerText = `${branchId} | ${branchName}`; // نوێکردنەوەی تێکستەکە بە ژمارە و ناوی بنکە
+    
+    document.querySelectorAll('#modalBranchSelect .option').forEach(opt => {
+        opt.classList.toggle('selected', opt.innerText.includes(branchName));
+    });
+    document.getElementById('modalBranchSelect').classList.remove('active'); // داخستنی لیستەکە دوای هەڵبژاردن
+}
+
+async function updateEmployeeBranch(userId) {
+    const newBranch = selectedBranchInModal;
+    if (confirm(translations[currentLang].confirmBranchChange)) {
+        if (confirm(translations[currentLang].confirmBranchChangeFinal)) {
+            const { error } = await adminClient.from('profiles').update({ branch_id: newBranch }).eq('id', userId);
+            if (!error) {
+                alert(translations[currentLang].successUpdate);
+                loadAttendanceData();
+                document.getElementById('empSettingsModal').style.display = 'none';
+            }
+        }
+    }
 }
 
 async function resetDeviceID() {
@@ -445,7 +553,7 @@ async function resetDeviceID() {
         alert("Error: " + error.message);
     } else {
         alert(translations[currentLang].resetSuccess);
-        document.getElementById('justModal').style.display = 'none';
+        if (document.getElementById('empSettingsModal')) document.getElementById('empSettingsModal').style.display = 'none';
     }
 }
 
@@ -467,12 +575,13 @@ function toggleAttendanceMobile() {
     const toggleBtn = document.querySelector('.mobile-attendance-toggle');
     const toggleText = document.getElementById('attendanceToggleText');
     
+    if (!attendanceContainer) return;
     const isExpanded = attendanceContainer.classList.toggle('expanded');
-    filterSection.classList.toggle('expanded');
-    toggleBtn.classList.toggle('active');
+    if (filterSection) filterSection.classList.toggle('expanded');
+    if (toggleBtn) toggleBtn.classList.toggle('active');
     
     // گۆڕینی تێکستەکە بەپێی زمان
-    toggleText.innerText = isExpanded ? translations[currentLang].hideAttendanceList : translations[currentLang].showAttendanceList;
+    if (toggleText) toggleText.innerText = isExpanded ? translations[currentLang].hideAttendanceList : translations[currentLang].showAttendanceList;
 }
 
 // داخستنی مۆداڵەکە بە کلیک لە دەرەوە

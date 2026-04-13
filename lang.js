@@ -101,7 +101,7 @@ const translations = {
         colJust: "ڕوونکردنەوە",
         statusPresent: "ئامادەبوو",
         statusAbsent: "نەهاتوو",
-        onDuty: "ئێستا لە دەوامدایە",
+        onDuty: "کەس ئێستا لەدەوامە",
         showStats: "نیشاندانی ئامارەکان",
         hideStats: "شاردنەوەی ئامارەکان",
         showAttendanceList: "نیشاندانی لیستی ئامادەبووان",
@@ -127,7 +127,13 @@ const translations = {
         officeManagerSign: "بەڕێوەبەری ئۆفیس",
         copyrightText: "هەموو مافێك پارێزراوە بۆ ئۆفیسی پارێزگای هەولێر",
         developedBy: "بیرۆکە و پەرەپێدان ",
-        tebini:"تێبینی"
+        tebini:"تێبینی",
+        empSettings: "ڕێکخستنی فەرمانبەر",
+        changeBranch: "گۆڕینی بنکە",
+        confirmBranchChange: "ئایا دڵنیایت لە گۆڕینی بنکەی ئەم فەرمانبەرە؟",
+        confirmBranchChangeFinal: "ئەمە کار دەکاتە سەر شوێنی دەوامی فەرمانبەرەکە، ئایا بۆ دواجار دڵنیایت؟",
+        successUpdate: "گۆڕانکارییەکە بە سەرکەوتوویی ئەنجامدرا",
+        change: "گۆڕین"
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -229,7 +235,7 @@ const translations = {
         colJust: "التبرير",
         statusPresent: "حاضر",
         statusAbsent: "غائب",
-        onDuty: "موجود في الدوام حالياً",
+        onDuty: "اشخاص بالدوام الآن",
         showStats: "إظهار الإحصائيات",
         hideStats: "إخفاء الإحصائيات",
         showAttendanceList: "إظهار قائمة الحضور",
@@ -255,8 +261,13 @@ const translations = {
         officeManagerSign: "مدير المكتب",
         copyrightText: "جميع الحقوق محفوظة لمكتب محافظة أربيل",
         developedBy: "التفکیر وَتَطْوِير",
-        tebini:"ملاحظة"
-
+        tebini:"ملاحظة",
+        empSettings: "إعدادات الموظف",
+        changeBranch: "تغيير المركز",
+        confirmBranchChange: "هل أنت متأكد من تغيير مركز هذا الموظف؟",
+        confirmBranchChangeFinal: "سيؤثر هذا على موقع دوام الموظف، هل أنت متأكد للمرة الأخيرة؟",
+        successUpdate: "تم إجراء التغيير بنجاح",
+        change: "تغيير"
     }
 };
 
