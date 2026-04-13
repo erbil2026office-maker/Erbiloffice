@@ -266,8 +266,8 @@ function startTracking() {
                 const allowedRadius = userProfile.branches.accuracy || 150; // بەکارهێنانی ١٥٠ وەکFallback ئەگەر لە داتابەیس دیاری نەکرابوو
                 isWithinGeofence = distanceToBranch <= allowedRadius;
                 
-                // Update accuracyArea with distance to branch
-                document.getElementById('accuracyArea').innerText = `${translations[currentLang].distBranch}: ${Math.round(distanceToBranch)} m | ${translations[currentLang].limit}: ${allowedRadius} m`;
+                // نیشاندانی تەنها دووری لە بنکە و شاردنەوەی سنووری ڕێپێدراو
+                document.getElementById('accuracyArea').innerText = `${translations[currentLang].distBranch}: ${Math.round(distanceToBranch)} مەتر`;
             } else if (userProfile && !userProfile.branches) {
                 console.warn("Branch location data missing for user. Geofence check skipped.");
                 document.getElementById('accuracyArea').innerText = `${translations[currentLang].gpsAcc}: ${accuracy} m (${translations[currentLang].noBranch})`;
@@ -748,7 +748,7 @@ function renderCalendar() {
     monthLabel.innerText = new Intl.DateTimeFormat(currentLang === 'ku' ? 'ku-IQ' : 'ar-IQ', { month: 'long', year: 'numeric' }).format(currentViewDate);
 
     // ناوی ڕۆژەکان
-    const days = currentLang === 'ku' ? ["ش", "ی", "د", "س", "چ", "پ", "هـ"] : ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+    const days = currentLang === 'ku' ? ["شەممە", "1شەم", "2شەم", "3شەم", "4شەم", "5شەم", "هەینی"] : ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
     days.forEach(d => {
         grid.innerHTML += `<div class="calendar-day-name">${d}</div>`;
     });
