@@ -33,15 +33,69 @@ function getTodayBounds() {
     };
 }
 
+// --- دروستکردنی پەنجەمۆری دەنگ (Audio Fingerprint) ---
+async function getAudioFingerprint() {
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => resolve('audio-timeout'), 1500);
+        try {
+            const AudioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+            if (!AudioContext) { clearTimeout(timeout); return resolve('no-audio'); }
+            
+            const context = new AudioContext(1, 44100, 44100);
+            const oscillator = context.createOscillator();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(10000, context.currentTime);
+            
+            const compressor = context.createDynamicsCompressor();
+            compressor.threshold.setValueAtTime(-50, context.currentTime);
+            compressor.knee.setValueAtTime(40, context.currentTime);
+            compressor.ratio.setValueAtTime(12, context.currentTime);
+            compressor.attack.setValueAtTime(0, context.currentTime);
+            compressor.release.setValueAtTime(0.25, context.currentTime);
+            
+            oscillator.connect(compressor);
+            compressor.connect(context.destination);
+            oscillator.start(0);
+            
+            context.startRendering().then(buffer => {
+                clearTimeout(timeout);
+                const data = buffer.getChannelData(0);
+                const sum = data.slice(4500, 5000).reduce((acc, val) => acc + Math.abs(val), 0);
+                resolve(Math.floor(sum * 10000).toString());
+            }).catch(() => { clearTimeout(timeout); resolve('audio-err'); });
+        } catch (e) { clearTimeout(timeout); resolve('audio-err'); }
+    });
+}
+
 // --- دروستکردنی پەنجەمۆری ڕەقەکاڵا (Hardware Fingerprint) ---
-function getHardwareFingerprint() {
-    // ١. کۆکردنەوەی سیفاتە فیزیکییەکانی ئامێر
+async function getHardwareFingerprint() {
+    const audioHash = await getAudioFingerprint();
+    // ١. دروستکردنی وێنەیەکی شووشەیی (Canvas) بۆ جیاکردنەوەی ووردتری GPU
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const txt = 'iHEC-Attendance-Check-Unique-ID-2024';
+    ctx.textBaseline = "top";
+    ctx.font = "14px 'Arial'";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#f60";
+    ctx.fillRect(125,1,62,20);
+    ctx.fillStyle = "#069";
+    ctx.fillText(txt, 2, 15);
+    ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+    ctx.fillText(txt, 4, 17);
+    const canvasHash = canvas.toDataURL();
+
+    // ٢. کۆکردنەوەی سیفاتە فیزیکییەکانی تری ئامێر
     const hardwareFeatures = [
         navigator.userAgent,
         screen.width + "x" + screen.height,
         new Date().getTimezoneOffset(),
         navigator.hardwareConcurrency || '8',
-        navigator.platform
+        navigator.platform,
+        navigator.language,
+        screen.colorDepth,
+        canvasHash,
+        audioHash // زیادکردنی پەنجەمۆری دەنگ بۆ گەیشتن بە ئەوپەڕی ووردکاری
     ].join('|');
 
     let hash = 0;
@@ -50,31 +104,15 @@ function getHardwareFingerprint() {
         hash |= 0;
     }
     
-return 'hw-' + Math.abs(hash).toString(36);
+    return 'hw-' + Math.abs(hash).toString(36);
 }
 
 // --- بەڕێوەبردنی ئایدی ئامێر (Smart Device Manager) ---
-function getDeviceID() {
-    const fingerprint = getHardwareFingerprint();
-
-    let storedID = localStorage.getItem('device_id');
-    // ئەگەر لە ناو LocalStorage هەبوو، هەر ئەوە دەگەڕێنینەوە
-    if (storedID && storedID.startsWith(fingerprint)) {
-        return storedID;
-    }
-
-    // ئەگەر نەبوو یان تێكچووبوو، جارێ تەنها پەنجەمۆرەکە دەگەڕێنینەوە
-    // لە DOMContentLoaded دووبارە پشکنینی بۆ دەکەینەوە
-    return storedID || fingerprint;
-}
-
-// دروستکردنی ئایدی نوێ بۆ یەکەمجار
-function generateNewFullID() {
-    const fingerprint = getHardwareFingerprint();
-    const newID = fingerprint + '-' + Math.random().toString(36).substr(2, 5);
-    localStorage.setItem('device_id', newID);
-    return newID;
-
+async function getDeviceID() {
+    const fingerprint = await getHardwareFingerprint();
+    // ناسنامەی ئامێر یەکسانە بە پەنجەمۆری ڕەقەکاڵاکە بەبێ گۆڕانکاری
+    localStorage.setItem('device_id', fingerprint);
+    return fingerprint;
 }
 
 // ئەژمارکردنی دووری نێوان دوو خاڵ بە مەتر (Haversine Formula)
@@ -509,7 +547,7 @@ async function processCheckIn() {
     btn.disabled = true;
     txt.innerText = translations[currentLang].waitRecord;
 
-    const currentDevice = getDeviceID();
+     const currentDevice = await getDeviceID();
     let status = "on_time"; // بە شێوەی سەرەکی
 
     // ١. پشکنینی ئامێر
@@ -645,35 +683,61 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profile) {
         userProfile = profile;
         renderProfileDisplay();
-
         // گوێگرتن لە گۆڕینی زمان بۆ نوێکردنەوەی ڕۆڵ و بنکە بە شێوەیەکی داینامیکی
         window.addEventListener('languageChanged', renderProfileDisplay);
 
-        const hardwareFP = getHardwareFingerprint();
-        let currentDev = getDeviceID();
-        if (!profile.device_id) {
-            // حاڵەتی ١: یەکەمجارە ئامێر تۆمار دەکات
-            currentDev = generateNewFullID();
-            await client
-                .from('profiles')
-                .update({ device_id: currentDev })
-                .eq('id', user.id);
-             isDeviceVerified = true;
-        } else if (profile.device_id.startsWith(hardwareFP)) {
-            // حاڵەتی ٢: Smart Recovery
-            // ئەگەر پەنجەمۆری ڕەقەکاڵاکە وەک یەک بوو، ئایدییە تەواوەکە دەگەڕێنینەوە بۆ مۆبایلەکە
-            localStorage.setItem('device_id', profile.device_id);
-            currentDev = profile.device_id;
-            isDeviceVerified = true;
-        } else {
-            // حاڵەتی ٣: ئامێرەکە جیاوازە و هی کەسێکی ترە
+       const hardwareFP = await getHardwareFingerprint();
+        let currentDev = await getDeviceID();
+
+        // ١. گەڕان بەدوای خاوەنی ئەم ئامێرە (ڕەقەکاڵایە) لەناو هەموو پڕۆفایلەکان
+        const { data: deviceOwner, error: deviceError } = await client
+            .from('profiles')
+            .select('id, full_name, device_id')
+            .not('device_id', 'is', null)
+            .eq('device_id', hardwareFP) // پشکنینی وورد و یەکسان بۆ ناسنامەی ئامێر
+            .maybeSingle(); // یەکەم کەس دەهێنێت کە ئەم ئامێرەی تۆمار کردبێت
+
+        if (deviceError) {
+            console.error("Device verification error:", deviceError);
             isDeviceVerified = false;
+            updateVerifyUI('device', isDeviceVerified, null, translations[currentLang].errorFetch);
+            return;
         }
-        
-        updateVerifyUI('device', isDeviceVerified, null, isDeviceVerified ? translations[currentLang].verified : translations[currentLang].deviceTaken);
+
+        let deviceMsgShort = translations[currentLang].verified;
+        let deviceMsgLong = "";
+
+        if (deviceOwner) {
+            if (deviceOwner.id === user.id) {
+                isDeviceVerified = true;
+            } else {
+                // حاڵەتی یەکەم: ئامێرەکە پێشتر لای کەسێکی تر تۆمار کراوە
+                isDeviceVerified = false;
+                deviceMsgShort = translations[currentLang].deviceTakenShort;
+                deviceMsgLong = translations[currentLang].deviceTaken;
+            }
+        } else {
+            if (!profile.device_id) {
+                // تۆمارکردنی ئامێری نوێ
+                await client.from('profiles').update({ device_id: hardwareFP }).eq('id', user.id);
+                isDeviceVerified = true;
+            } else {
+                // حاڵەتی دووەم: فەرمانبەرەکە ئامێری تری هەیە و ئەمە هی ئەو نییە
+                isDeviceVerified = false;
+                deviceMsgShort = translations[currentLang].notPreviousDevice;
+                deviceMsgLong = translations[currentLang].notPreviousDevicelong;
+            }
+        }
+
+        // نوێکردنەوەی ئایکۆنی بچووک بە تێکستی کورت
+        updateVerifyUI('device', isDeviceVerified, null, deviceMsgShort);
 
         // ئەگەر ئامێرەکە هەڵە بوو، یەکسەر دوگمەکە ناچالاک بکە
-        if (!isDeviceVerified) [document.getElementById('checkinBtn'), document.getElementById('checkoutBtn')].forEach(b => { if(b) b.disabled = true; });
+        if (!isDeviceVerified) {
+            [document.getElementById('checkinBtn'), document.getElementById('checkoutBtn')].forEach(b => { if(b) b.disabled = true; });
+            // نیشاندانی پەیامە درێژەکە لە باڕە سوورەکەی سەرەوە
+            updateStatus(deviceMsgLong || deviceMsgShort, 'error');
+        }
     } else {
         const userName = user.user_metadata?.full_name || user.email.split('@')[0];
         if (welcomeLabel) welcomeLabel.innerText = userName;

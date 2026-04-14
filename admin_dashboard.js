@@ -63,15 +63,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         });
 
-    // گوێگرتن لە گۆڕانکارییەکانی خشتەی ئامادەبوون بە شێوەی ڕاستەوخۆ
+    // --- Modern Real-time Synchronizer ---
+    // چاودێریکردنی هەموو گۆڕانکارییەکانی ئامادەبوون و ڕوونکردنەوەکان بە شێوەی زیندوو
     adminClient
-        .channel('attendance_realtime')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'attendance' }, payload => {
-            // ئەگەر ڕێکەوتەکە هی ئەمڕۆ بوو، داتاکە نوێ بکەرەوە
-            const today = new Date().toISOString().split('T')[0];
-            if (payload.new.check_in_time.startsWith(today)) {
-                loadAttendanceData();
-            }
+        .channel('db_live_sync')
+        // گوێگرتن لە (Insert, Update, Delete) لە خشتەی ئامادەبوون
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => {
+            loadAttendanceData(); 
+        })
+        // گوێگرتن لە هەر گۆڕانکارییەک لە ڕوونکردنەوەکان (Justifications)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'justifications' }, () => {
+            loadAttendanceData();
         })
         .subscribe();
 
