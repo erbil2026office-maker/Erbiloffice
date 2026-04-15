@@ -61,6 +61,13 @@ body {
     display: inline-block;
 }
 
+.count-badge.badge-leave-count {
+    background: rgba(255, 193, 7, 0.1); /* زەردی کاڵ */
+    color: #ffc107; /* زەردی تۆخ */
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    margin-right: 5px; /* بۆشایی لە نێوان باجەکان */
+}
+
 .admin-header h1 { color: white; margin: 0; font-size: 1.8rem; }
 .admin-header p { color: rgba(255, 255, 255, 0.8); margin: 5px 0 0 0; }
 
@@ -577,6 +584,25 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     border-bottom-color: var(--primary); /* گۆڕینی ڕەنگی هێڵەکە بۆ شین تەنها لە کاتی هۆڤەر */
 }
 
+.attendance-item.on-duty-row {
+    background: rgba(34, 197, 94, 0.05); /* پاشبنەمای سەوزی زۆر کاڵ */
+    border-right: 4px solid #22c55e; /* هێڵێکی سەوزی تۆخ بۆ لای ڕاست (سەرەتای ڕیز لە RTL) */
+}
+
+.attendance-item.on-duty-row:hover {
+    background: rgba(34, 197, 94, 0.09); /* تۆختر بوون لە کاتی هۆڤەر */
+}
+
+.attendance-item.on-leave-row {
+    background: rgba(255, 193, 7, 0.05); /* پاشبنەمای زەردی زۆر کاڵ */
+    border-right: 4px solid #ffc107; /* هێڵێکی زەردی تۆخ بۆ لای ڕاست */
+}
+
+.attendance-item.on-leave-row:hover {
+    background: rgba(255, 193, 7, 0.09); /* تۆختر بوون لە کاتی هۆڤەر */
+    border-bottom-color: #ffc107;
+}
+
 .attendance-item:last-child { border-bottom: none; }
 
  .emp-name { font-weight: 700; color: var(--text-main); font-size: 0.78rem; line-height: 1; }
@@ -662,6 +688,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .badge-early { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
 .badge-warn { background: rgba(234, 179, 8, 0.1); color: #ca8a04; }
 .badge-orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.badge-leave { background: rgba(255, 193, 7, 0.1); color: #ffc107; } /* ڕەنگی زەرد بۆ مۆڵەت */
 .badge-blue { background: rgba(0, 98, 255, 0.1); color: var(--primary); }
 .badge-danger { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
 
@@ -759,8 +786,11 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .btn-danger-modern {
     background: linear-gradient(135deg, #ef4444, #dc2626) !important;
     margin-top: 0 !important;
+    color: white !important;
+    border-radius: 10px !important;
+    border: none !important;
 }
-.btn-danger-modern:hover { background: #dc2626 !important; transform: scale(1.02); }
+.btn-danger-modern:hover { background: #ea4040 !important; transform: scale(1.02); }
 
 .settings-label {
     font-size: 0.65rem;
@@ -792,6 +822,55 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.modal-header-compact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: right;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header-compact i {
+    font-size: 1.4rem;
+    color: var(--primary);
+}
+
+.date-range-group {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.date-range-group input {
+    flex: 1;
+    text-align: center;
+    height: 32px !important;
+    font-size: 0.75rem !important;
+}
+
+.mini-trigger {
+    height: 32px !important;
+    font-size: 0.75rem !important;
+}
+
+.mini-btn {
+    height: 30px !important;
+    font-size: 0.7rem !important;
+    margin-top: 5px !important;
+}
+
+.mini-action-link {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: underline;
 }
 
 #empSettingsModal .options-list {
@@ -1054,6 +1133,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .status-pill {
     padding: 2px 10px;
     border-radius: 50px;
+    white-space: nowrap;
     font-size: 0.7rem;
     font-weight: 700;
     display: inline-block;
@@ -1061,6 +1141,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .status-present { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
 .status-absent { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+.status-leave { background: rgba(255, 193, 7, 0.1); color: #ffc107; } /* ڕەنگی زەرد بۆ مۆڵەت */
 
 .loading-state {
     padding: 50px;

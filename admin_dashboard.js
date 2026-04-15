@@ -5,6 +5,7 @@ const adminClient = supabase.createClient(URL_SB, KEY_SB);
 let attendanceCache = []; // پاشەکەوتکردنی داتا بۆ فلتەرکردنی خێرا
 let staffCache = [];      // پاشەکەوتکردنی فەرمانبەران
 let justificationsCache = []; // پاشەکەوتکردنی ڕوونکردنەوەکان
+let leavesCache = []; // پاشەکەوتکردنی مۆڵەتەکان
 let allAdminsCached = []; // بۆ هەڵگرتنی لیستی ئادمینەکان و نوێکردنەوەی دۆخی ئۆنلاین
 let onlineAdmins = {};    // بۆ هەڵگرتنی ئەو ئادمینانەی ئێستا لەسەر هێڵن
 let selectedUserIdForReset = null; // بۆ هەڵگرتنی ئایدی ئەو بەکارهێنەرەی ئێستا مۆداڵەکەی بۆ کراوەتەوە
@@ -12,6 +13,9 @@ let branchesCache = []; // پاشەکەوتکردنی لیستی هەموو بن
 let selectedBranchInModal = null; // بۆ هەڵگرتنی بنکەی دیاریکراو لە ناو مۆداڵ
 
 let currentFilters = {
+    // زیادکردنی فلتەری مۆڵەت
+    // leave: 'all', // ئەگەر ویستت فلتەری مۆڵەتیش زیاد بکەیت
+
     branch: 'all',
     status: 'all'
 };
@@ -73,6 +77,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         })
         // گوێگرتن لە هەر گۆڕانکارییەک لە ڕوونکردنەوەکان (Justifications)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'justifications' }, () => {
+            loadAttendanceData();
+        })
+        // گوێگرتن لە هەر گۆڕانکارییەک لە مۆڵەتەکان (Leaves)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'leaves' }, () => {
             loadAttendanceData();
         })
         .subscribe();
@@ -139,6 +147,14 @@ async function loadAttendanceData() {
         console.error("Justification Fetch Error:", justError.message);
     }
 
+    // هێنانی مۆڵەتەکان
+    const { data: leaves, error: leavesError } = await adminClient
+        .from('leaves')
+        .select('*');
+    if (leavesError) {
+        console.error("Leaves Fetch Error:", leavesError.message);
+    }
+
     // هێنانی ئادمینەکان بە جیا بۆ ئەوەی هەمیشە هەموویان دیار بن بەبێ گوێدانە فلتەری بنکە
     const { data: admins } = await adminClient
         .from('profiles')
@@ -153,6 +169,7 @@ async function loadAttendanceData() {
 
         attendanceCache = data || [];
         staffCache = staff || [];
+        leavesCache = leaves || [];
         justificationsCache = justs || [];
 
         allAdminsCached = admins; // پاشەکەوتکردنی لیستەکە بۆ بەکارهێنان لە پرێزنس
@@ -170,7 +187,10 @@ function applyFiltersLocally() {
     const statusFilter = currentFilters.status;
     const searchQuery = document.getElementById('nameSearch').value.toLowerCase();
     
+    const selectedDateStr = document.getElementById('datePicker').value; // "YYYY-MM-DD"
+
     let filteredStaff = staffCache.filter(emp => {
+        const isOnLeave = leavesCache.some(l => l.user_id === emp.id && l.start_date <= selectedDateStr && l.end_date >= selectedDateStr);
         const record = attendanceCache.find(a => a.user_id === emp.id);
         const hasJustification = justificationsCache.some(j => j.user_id === emp.id);
 
@@ -178,6 +198,9 @@ function applyFiltersLocally() {
         const matchesSearch = emp.full_name.toLowerCase().includes(searchQuery);
         if (!matchesSearch) return false;
         
+        // ئەگەر فەرمانبەرەکە لە مۆڵەتدا بوو، و فلتەرەکە "نەهاتوو" نەبوو، ئەوا نیشانی بدە
+        if (isOnLeave && statusFilter !== 'absent') return true;
+
         if (statusFilter === 'all') return true;
         
         if (record) {
@@ -196,7 +219,7 @@ function applyFiltersLocally() {
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else {
                 if (statusFilter === 'noExit') return true;
-            }
+            } // ئەگەر لە مۆڵەتدا بوو، ئەوا بە "نەهاتوو" ناژمێردرێت
         } else {
             if (statusFilter === 'absent') return true;
         }
@@ -307,14 +330,37 @@ function renderAttendance(attendance, employees) {
     const listDiv = document.getElementById('attendanceList');
     const sectionTitle = document.querySelector('.attendance-container .section-title');
     
-    // هەژمارکردنی ئەو کەسانەی کە ئێستا لە دەوامدان (هاتنیان کردووە و دەرنەچوون)
+    // ١. ڕیزکردنی فەرمانبەران: ئەو کەسانەی چێک-ئینیان کردووە و دەرنەچوون دێنە سەرەوەی لیستەکە
+    const selectedDateStr = document.getElementById('datePicker').value;
+
+    const langCode = currentLang === 'ku' ? 'ku' : 'ar';
+    employees.sort((a, b) => {
+        const recA = attendance.find(r => r.user_id === a.id);
+        const recB = attendance.find(r => r.user_id === b.id);
+        const onDutyA = (recA && !recA.check_out_time) ? 1 : 0;
+        const onDutyB = (recB && !recB.check_out_time) ? 1 : 0;
+
+        const onLeaveA = leavesCache.some(l => l.user_id === a.id && l.start_date <= selectedDateStr && l.end_date >= selectedDateStr) ? 1 : 0;
+        const onLeaveB = leavesCache.some(l => l.user_id === b.id && l.start_date <= selectedDateStr && l.end_date >= selectedDateStr) ? 1 : 0;
+
+        if (onDutyA !== onDutyB) return onDutyB - onDutyA; // ئەوانەی لە دەوامدان (1) دێنە پێش (0)
+        if (onLeaveA !== onLeaveB) return onLeaveB - onLeaveA; // پاشان ئەوانەی لە مۆڵەتن
+        return a.full_name.localeCompare(b.full_name, langCode); // پاشان بەپێی ناو
+    });
+
+    // ٢. هەژمارکردنی ئەو کەسانەی کە ئێستا لە دەوامدان بۆ نیشاندان لە باجەکەدا
     const onDutyCount = employees.filter(emp => {
         const record = attendance.find(a => a.user_id === emp.id);
         return record && !record.check_out_time;
     }).length;
 
     // نوێکردنەوەی تایتڵ و زیادکردنی باجی ژمارە
-    sectionTitle.innerHTML = `<div class="title-icon-box"><i class="fas fa-list-ul"></i></div> <span>${translations[currentLang].attendanceListTitle}</span> <span class="count-badge" title="${translations[currentLang].onDuty}">${onDutyCount} ${translations[currentLang].onDuty}</span>`;
+    const onLeaveCount = employees.filter(emp => {
+        return leavesCache.some(l => l.user_id === emp.id && l.start_date <= selectedDateStr && l.end_date >= selectedDateStr);
+    }).length;
+
+    sectionTitle.innerHTML = `<div class="title-icon-box"><i class="fas fa-list-ul"></i></div> <span>${translations[currentLang].attendanceListTitle}</span> 
+                              <span class="count-badge" title="${translations[currentLang].onDuty}">${onDutyCount} ${translations[currentLang].onDuty}</span> <span class="count-badge badge-leave-count" title="${translations[currentLang].onLeave}">${onLeaveCount} ${translations[currentLang].onLeave}</span>`;
 
     // دروستکردنی سەردێڕی خشتەکە بۆ لاپتۆپ
     listDiv.innerHTML = `
@@ -328,14 +374,6 @@ function renderAttendance(attendance, employees) {
         </div>
     `;
 
-    // پۆلێنکردن بەپێی بنکە
-    const grouped = employees.reduce((acc, emp) => {
-        const bName = emp.branches ? `${emp.branches.branch_id} | ${emp.branches.branch_name}` : "بێ بنکە";
-        if (!acc[bName]) acc[bName] = [];
-        acc[bName].push(emp);
-        return acc;
-    }, {});
-
     // ئامارە نوێیەکان
     let stats = {
         earlyIn: 0,    // پێش 8:30
@@ -347,20 +385,33 @@ function renderAttendance(attendance, employees) {
         notCheckedOut: 0 // ئەو کەسانەی هاتنیان کردووە بەڵام دەرنەچوون
     };
 
-    for (const [branch, emps] of Object.entries(grouped)) {
-        const section = document.createElement('div');
-        section.className = "branch-group-container";
-        
-        emps.forEach(emp => {
+    // دروستکردنی لیستەکە وەک یەک پارچەی یەکگرتوو بۆ ئەوەی ڕیزبەندییەکە بە دروستی کار بکات
+    const section = document.createElement('div');
+    section.className = "branch-group-container";
+
+    // حیسابکردنی ئامارەکان لەسەر هەموو فەرمانبەران، بەبێ ئەوانەی لە مۆڵەتن
+    employees.forEach(emp => {
             const record = attendance.find(a => a.user_id === emp.id);
+            const branch = emp.branches ? `${emp.branches.branch_id} | ${emp.branches.branch_name}` : "بێ بنکە";
             const row = document.createElement('div');
             const isOnDuty = record && !record.check_out_time;
-            row.className = 'attendance-item';
+            row.className = `attendance-item ${isOnDuty ? 'on-duty-row' : ''}`;
             let employeeClassifications = []; // لیستێک بۆ کۆکردنەوەی هەموو پۆڵێنەکان
+
+            const employeeLeave = leavesCache.find(l => 
+                l.user_id === emp.id &&
+                l.start_date <= selectedDateStr &&
+                l.end_date >= selectedDateStr
+            );
+            const isOnLeave = !!employeeLeave;
+
             const just = justificationsCache.find(j => j.user_id === emp.id);
             const hasJustification = !!just;
             
-            if (record) {
+            if (isOnLeave) { // ئەگەر لە مۆڵەتدا بوو
+                row.className = `attendance-item on-leave-row`;
+                employeeClassifications.push({ label: `${translations[currentLang].reasonForLeave}: ${translations[currentLang][employeeLeave.reason]}`, class: 'badge-leave', icon: 'fas fa-plane-departure' });
+            } else if (record) { // ئەگەر چێک-ئینی کردبوو
                 const checkIn = new Date(record.check_in_time);
                 const inTime = checkIn.getHours() * 60 + checkIn.getMinutes();
                 
@@ -394,7 +445,7 @@ function renderAttendance(attendance, employees) {
                     employeeClassifications.push({ label: translations[currentLang].noExitStat, class: 'badge-warn', icon: 'fas fa-hourglass-half' });
                 }
             } else {
-                // ئەگەر هیچ ڕیکۆردێکی نەبوو، واتە نەهاتووە
+                // ئەگەر هیچ ڕیکۆردێکی نەبوو و لە مۆڵەتیشدا نەبوو، واتە نەهاتووە
                 stats.absent++;
                 employeeClassifications.push({ label: translations[currentLang].absentStat, class: 'badge-danger', icon: 'fas fa-user-slash' });
             }
@@ -406,7 +457,7 @@ function renderAttendance(attendance, employees) {
             
             const tIn = record ? new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '--:--';
             const tOut = record?.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '--:--';
-            const statusLabel = record ? `<span class="status-pill status-present">${translations[currentLang].statusPresent}</span>` : `<span class="status-pill status-absent">${translations[currentLang].statusAbsent}</span>`;
+            const statusLabel = isOnLeave ? `<span class="status-pill status-leave">${translations[currentLang].leaveStatus}</span>` : (record ? `<span class="status-pill status-present">${translations[currentLang].statusPresent}</span>` : `<span class="status-pill status-absent">${translations[currentLang].statusAbsent}</span>`);
             
            row.innerHTML = `
                 <div class="emp-name-col">
@@ -433,9 +484,8 @@ function renderAttendance(attendance, employees) {
                 </div>
             `;
             section.appendChild(row);
-        });
-        listDiv.appendChild(section);
-    }
+    });
+    listDiv.appendChild(section);
 
     // نوێکردنەوەی کارتەکان لە UI
     document.getElementById('countEarlyIn').innerText = stats.earlyIn;
@@ -446,6 +496,10 @@ function renderAttendance(attendance, employees) {
     document.getElementById('countAbsent').innerText = stats.absent;
     document.getElementById('countNotCheckedOut').innerText = stats.notCheckedOut;
 }
+
+// فەنکشنی یاریدەدەر بۆ دروستکردنی ڕیزی ئامادەبوون
+// ئەم فەنکشنە لابراوە چونکە لۆجیکی ڕیزکردنەکە گوازرایەوە بۆ renderAttendance
+// و ڕیزەکان ڕاستەوخۆ لەوێ دروست دەکرێن
 
 function viewDetails(userId) {
     const staff = staffCache.find(s => s.id === userId);
@@ -464,6 +518,10 @@ async function openEmployeeSettings(userId) {
     if (!emp) return;
     selectedUserIdForReset = userId;
 
+    // Reset leave modal fields
+    selectedLeaveStartDate = null;
+    selectedLeaveEndDate = null;
+    selectedLeaveReasonInModal = null;
     let modal = document.getElementById('empSettingsModal');
     if (!modal) {
         modal = document.createElement('div');
@@ -473,6 +531,19 @@ async function openEmployeeSettings(userId) {
         document.body.appendChild(modal);
     }
 
+    // هێنانی مۆڵەتی چالاک یان داهاتووی فەرمانبەرەکە
+    const { data: employeeLeave, error: leaveError } = await adminClient
+        .from('leaves')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('end_date', new Date().toISOString().split('T')[0]) // مۆڵەتەکانی چالاک یان داهاتوو
+        .order('start_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (leaveError) console.error("Error fetching employee leave:", leaveError);
+
+    // Branch selection HTML
     const currentBranchName = branchesCache.find(b => b.branch_id === emp.branch_id)?.branch_name || translations[currentLang].allBranches;
     selectedBranchInModal = emp.branch_id;
 
@@ -482,33 +553,85 @@ async function openEmployeeSettings(userId) {
         </div>
     `).join('');
 
+    // Leave reason options HTML
+    const leaveReasons = [
+        { key: 'sickLeave', text: translations[currentLang].sickLeave },
+        { key: 'maternityLeave', text: translations[currentLang].maternityLeave },
+        { key: 'longTermLeave', text: translations[currentLang].longTermLeave },
+        { key: 'regularLeave', text: translations[currentLang].regularLeave }
+    ];
+    const leaveReasonOptionsHtml = leaveReasons.map(r => `
+        <div class="option ${employeeLeave?.reason === r.key ? 'selected' : ''}" onclick="selectLeaveReason(event, '${r.key}', '${r.text}')">
+            ${r.text}
+        </div>
+    `).join('');
+
+    // Pre-fill leave dates if an active leave exists
+    const leaveStartDate = employeeLeave ? employeeLeave.start_date : '';
+    const leaveEndDate = employeeLeave ? employeeLeave.end_date : '';
+    const leaveReasonText = employeeLeave ? translations[currentLang][employeeLeave.reason] : translations[currentLang].selectLeaveReason;
+
+    selectedLeaveStartDate = leaveStartDate;
+    selectedLeaveEndDate = leaveEndDate;
+    selectedLeaveReasonInModal = employeeLeave?.reason || '';
+
     modal.innerHTML = `
-        <div class="modal-window" style="max-width:340px; padding:20px; border-radius:22px;">
-            <div class="modal-icon" style="font-size:1.6rem; margin-bottom:5px; color:var(--primary);"><i class="fas fa-user-cog"></i></div>
-            <h3 style="margin-bottom:2px; font-size:1.1rem; color:var(--text-main);">${translations[currentLang].empSettings}</h3>
-            <p style="font-size:0.8rem; font-weight:600; color:var(--text-sub); margin-bottom:15px;">${emp.full_name}</p>
+        <div class="modal-window compact-settings-modal" style="max-width:340px; padding:15px; border-radius:20px;">
+            <div class="modal-header-compact">
+                <i class="fas fa-user-cog"></i>
+                <div>
+                    <h3 style="margin:0; font-size:1rem;">${translations[currentLang].empSettings}</h3>
+                    <p style="margin:0; font-size:0.75rem; color:var(--text-sub);">${emp.full_name}</p>
+                </div>
+            </div>
+            
             <div class="settings-grid">
                 <div class="settings-group">
-                    <label class="settings-label"><i class="fas fa-map-marker-alt"></i> ${translations[currentLang].changeBranch}</label>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="settings-label" style="margin:0;"><i class="fas fa-map-marker-alt"></i> ${translations[currentLang].branchLabel}</label>
+                        <button class="mini-action-link" onclick="updateEmployeeBranch('${userId}')">${translations[currentLang].change}</button>
+                    </div>
                     <div class="custom-select" id="modalBranchSelect" onclick="toggleCustomDropdown(event, 'modalBranchSelect')">
-                        <div class="select-trigger" style="height:36px; font-size:0.8rem;">
+                        <div class="select-trigger mini-trigger">
                             <span class="selected-text">${currentBranchName}</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="options-list">${branchOptionsHtml}</div>
                     </div>
-                    <button class="settings-save-btn" onclick="updateEmployeeBranch('${userId}')"><i class="fas fa-save"></i> ${translations[currentLang].change}</button>
                 </div>
-                <div class="settings-group reset-group">
-                    <label class="settings-label"><i class="fas fa-mobile-alt"></i> ${translations[currentLang].device}</label>
-                    <div class="select-trigger device-info-trigger">
-                        <span class="selected-text">${emp.device_id ? 'ئامێری پەیوەستکراو (Linked)' : 'ئامێر بەردەست نییە'}</span>
-                        <i class="fas fa-mobile-alt"></i>
+
+                <div class="settings-group">
+                    <label class="settings-label"><i class="fas fa-plane-departure"></i> ${translations[currentLang].leaveManagement}</label>
+                    <div class="date-range-group">
+                        <input type="date" id="leaveStartDate" class="glass-input" value="${leaveStartDate}" onchange="selectedLeaveStartDate = this.value;">
+                        <input type="date" id="leaveEndDate" class="glass-input" value="${leaveEndDate}" onchange="selectedLeaveEndDate = this.value;">
                     </div>
-                    <button class="settings-save-btn btn-danger-modern" onclick="resetDeviceID()"><i class="fas fa-redo"></i> ${translations[currentLang].resetDevice}</button>
+                    <div class="custom-select" id="leaveReasonSelect" onclick="toggleCustomDropdown(event, 'leaveReasonSelect')">
+                        <div class="select-trigger mini-trigger">
+                            <span class="selected-text">${leaveReasonText}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="options-list">${leaveReasonOptionsHtml}</div>
+                    </div>
+                    <div class="settings-actions-row">
+                        <button class="settings-save-btn mini-btn" onclick="saveEmployeeLeave('${userId}')" style="flex: 1;"><i class="fas fa-save"></i> ${translations[currentLang].saveLeave}</button>
+                        <button class="settings-save-btn btn-danger-modern mini-btn" onclick="deleteEmployeeLeave('${userId}')" style="width: 38px; ${!employeeLeave ? 'display: none;' : ''}" id="deleteLeaveBtn">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-group reset-group" style="padding: 10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="text-align:right;">
+                            <span class="settings-label" style="margin:0;"><i class="fas fa-mobile-alt"></i> ${translations[currentLang].device}</span>
+                            <span style="font-size:0.65rem; color:${emp.device_id ? '#ef4444' : 'var(--text-sub)'}">${emp.device_id ? 'Linked to device' : 'Not Linked to device'}</span>
+                        </div>
+                        <button class="mini-btn btn-danger-modern" style="width:auto; padding:0 12px; height:28px; font-size:0.7rem;" onclick="resetDeviceID()"><i class="fas fa-redo"></i> Reset</button>
+                    </div>
                 </div>
             </div>
-            <button class="modal-close-link" onclick="document.getElementById('empSettingsModal').style.display='none'"><i class="fas fa-times"></i> ${translations[currentLang].close}</button>
+            <button class="modal-close-link mini-close" onclick="document.getElementById('empSettingsModal').style.display='none'"><i class="fas fa-times"></i> ${translations[currentLang].close}</button>
         </div>
     `;
     modal.style.display = 'flex';
@@ -521,6 +644,7 @@ function selectModalBranch(event, branchId, branchName) {
     if (trigger) trigger.innerText = `${branchId} | ${branchName}`; // نوێکردنەوەی تێکستەکە بە ژمارە و ناوی بنکە
     
     document.querySelectorAll('#modalBranchSelect .option').forEach(opt => {
+        // Fix: Check if opt.innerText contains branchName, not just equals
         opt.classList.toggle('selected', opt.innerText.includes(branchName));
     });
     document.getElementById('modalBranchSelect').classList.remove('active'); // داخستنی لیستەکە دوای هەڵبژاردن
@@ -538,6 +662,66 @@ async function updateEmployeeBranch(userId) {
             }
         }
     }
+}
+
+function selectLeaveReason(event, reasonKey, reasonText) {
+    if (event) event.stopPropagation();
+    selectedLeaveReasonInModal = reasonKey;
+    const trigger = document.querySelector('#leaveReasonSelect .selected-text');
+    if (trigger) trigger.innerText = reasonText;
+
+    document.querySelectorAll('#leaveReasonSelect .option').forEach(opt => {
+        opt.classList.toggle('selected', opt.innerText === reasonText);
+    });
+    document.getElementById('leaveReasonSelect').classList.remove('active');
+}
+
+async function saveEmployeeLeave(userId) {
+    if (!selectedLeaveStartDate || !selectedLeaveEndDate || !selectedLeaveReasonInModal) {
+        alert(translations[currentLang].selectDates);
+        return;
+    }
+
+    if (new Date(selectedLeaveStartDate) > new Date(selectedLeaveEndDate)) {
+        alert(translations[currentLang].invalidDateRange);
+        return;
+    }
+
+    if (!confirm(translations[currentLang].confirmSaveLeave)) return;
+
+    const { error } = await adminClient
+        .from('leaves')
+        .upsert({
+            user_id: userId,
+            start_date: selectedLeaveStartDate,
+            end_date: selectedLeaveEndDate,
+            reason: selectedLeaveReasonInModal
+        }, { onConflict: 'user_id,start_date' }); // Assuming one leave per user per start_date
+
+    if (error) {
+        alert("Error: " + error.message);
+    } else {
+        alert(translations[currentLang].leaveSavedSuccess);
+        loadAttendanceData();
+        document.getElementById('empSettingsModal').style.display = 'none';
+    }
+}
+
+async function deleteEmployeeLeave(userId) {
+    if (!selectedLeaveStartDate || !selectedLeaveEndDate) {
+        alert(translations[currentLang].noLeaveRecorded);
+        return;
+    }
+    if (!confirm(translations[currentLang].confirmDeleteLeave)) return;
+
+    const { error } = await adminClient
+        .from('leaves')
+        .delete()
+        .eq('user_id', userId)
+        .eq('start_date', selectedLeaveStartDate); // Delete the specific leave
+
+    if (error) { alert("Error: " + error.message); }
+    else { alert(translations[currentLang].leaveDeletedSuccess); loadAttendanceData(); document.getElementById('empSettingsModal').style.display = 'none'; }
 }
 
 async function resetDeviceID() {
