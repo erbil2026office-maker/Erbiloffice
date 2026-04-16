@@ -599,9 +599,9 @@ input:focus + .input-icon { color: var(--accent-pink); }
 }
 
 .option {
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-radius: 8px;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: 0.2s;
@@ -654,7 +654,8 @@ input:focus + .input-icon { color: var(--accent-pink); }
 
 }
 
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="dark"] input[type="time"]::-webkit-calendar-picker-indicator {
     filter: invert(0.7) sepia(1) saturate(5) hue-rotate(200deg); /* شینێکی گەشاوە بۆ دۆخی تاریک */
 }
 
@@ -680,7 +681,6 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
         padding: 20px;
         border-radius: 20px;
     }
-}
 
 /* Dashboard Layout Improvements */
 .dashboard-container {
