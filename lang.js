@@ -12,6 +12,8 @@ const translations = {
         login_error: "ئیمەیڵ یان وشەی تێپەڕ هەڵەیە!",
         logout: "چوونە دەرەوە",
         employee: "فەرمانبەر",
+        "sub-admin": "بەڕێوەبەر",
+        "assistant-manager": "یاریدەدەری بەڕێوەبەر",
         admin: "بەڕێوەبەر",
         clockLoading: "باردەکرێت...",
         arrival: "ئامادەبوون",
@@ -140,11 +142,12 @@ const translations = {
         leaveManagement: "بەڕێوەبردنی مۆڵەت",
         startDate: "ڕێکەوتی دەستپێک",
         endDate: "ڕێکەوتی کۆتایی",
-        reasonForLeave: "هۆکاری مۆڵەت",
+        reasonForLeave: "مۆڵەت",
         sickLeave: "مۆڵەتی نەخۆشی",
         maternityLeave: "مۆڵەتی دایکایەتی",
         longTermLeave: "مۆڵەتی درێژخایەن",
         regularLeave: "مۆڵەتی ئاسایی",
+        hourlyLeave: "مۆڵەتی کاتی (سەعاتی)",
         saveLeave: "تۆمارکردنی مۆڵەت",
         deleteLeave: "سڕینەوەی مۆڵەت",
         leaveStatus: "لە مۆڵەتە",
@@ -156,7 +159,11 @@ const translations = {
         selectLeaveReason: "هۆکاری مۆڵەت هەڵبژێرە",
         selectDates: "تکایە ڕێکەوتەکانی دەستپێک و کۆتایی دیاری بکە.",
         invalidDateRange: "ڕێکەوتی کۆتایی ناتوانێت پێش ڕێکەوتی دەستپێک بێت.",
-        onLeave: "کەس لە مۆڵەتە"
+        onLeave: "کەس لە مۆڵەتە",
+        branchManagement: "بەڕێوەبردنی فەرمانبەرانی بنکە",
+        selectStaff: "فەرمانبەر هەڵبژێرە",
+        viewHistory: "بینینی دەوام",
+        staffAttendanceDetails: "وردەکاری دەوامی فەرمانبەر"
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -169,6 +176,8 @@ const translations = {
         login_error: "البريد الإلكتروني أو كلمة المرور غير صحيحة!",
         logout: "تسجيل الخروج",
         employee: "موظف",
+        "sub-admin": "مدير",
+        "assistant-manager": "معاون مدير",
         admin: "مدير",
         clockLoading: "جاري التحميل...",
         arrival: "الحضور",
@@ -297,11 +306,12 @@ const translations = {
         leaveManagement: "إدارة الإجازات",
         startDate: "تاريخ البدء",
         endDate: "تاريخ الانتهاء",
-        reasonForLeave: "سبب الإجازة",
+        reasonForLeave: "الإجازة",
         sickLeave: "إجازة مرضية",
         maternityLeave: "إجازة أمومة",
-        longTermLeave: "إجازة طويلة الأمد",
+        longTermLeave: "إجازة طويلة",
         regularLeave: "إجازة اعتيادية",
+        hourlyLeave: "إجازة زمنية (ساعات)",
         saveLeave: "حفظ الإجازة",
         deleteLeave: "حذف الإجازة",
         leaveStatus: "في إجازة",
@@ -313,7 +323,11 @@ const translations = {
         selectLeaveReason: "اختر سبب الإجازة",
         selectDates: "يرجى تحديد تاريخي البدء والانتهاء.",
         invalidDateRange: "تاريخ الانتهاء لا يمكن أن يكون قبل تاريخ البدء.",
-        onLeave: "الموظف في إجازة"
+        onLeave: "الموظف في إجازة",
+        branchManagement: "إدارة موظفي المركز",
+        selectStaff: "اختر الموظف",
+        viewHistory: "عرض الدوام",
+        staffAttendanceDetails: "تفاصيل دوام الموظف"
     }
 };
 

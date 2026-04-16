@@ -12,6 +12,40 @@ let currentUser = null;
 let userProfile = null; // پاشەکەوتکردنی زانیاری پڕۆفایل و بنکە
 let isDeviceVerified = false; // بۆ پشکنینی دۆخی ئامێرەکە بە گشتی
 let currentDetailDate = null; // بۆ هەڵگرتنی ڕێکەوتی ئەو ڕۆژەی کلیکی لێکراوە
+let staffAttendanceData = []; // داتای دەوامی فەرمانبەری هەڵبژێردراو
+let staffLeaveData = []; // داتای مۆڵەتی فەرمانبەری هەڵبژێردراو
+let userLeaves = []; // مۆڵەتەکانی فەرمانبەری لۆگینبوو
+let staffViewDate = new Date(); // ڕێکەوتی پیشاندانی کالێندەری فەرمانبەر
+let staffInBranch = []; // بۆ هەڵگرتنی لیستی فەرمانبەرانی بنکەکە
+let selectedStaffId = null; // ئەو فەرمانبەرەی بەرپرسی بنکە هەڵیبژاردووە
+let lastViewedStaffId = null; // پاشەکەوتکردنی ئایدی فەرمانبەری ئێستا بۆ کالێندەر
+let selectedLeaveStartDate = null;
+let selectedLeaveStartTime = null;
+let selectedLeaveEndTime = null;
+let staffDetailModal = null; // New global variable for the staff detail modal
+let selectedLeaveEndDate = null;
+let selectedLeaveReason = null;
+
+// فەنکشنی یاریدەدەر بۆ گۆڕینی کات لە ٢٤ کاتژمێرییەوە بۆ ١٢ کاتژمێری
+function formatTime12(input) {
+    if (!input) return '';
+    let h, m;
+    if (typeof input === 'string' && input.includes(':') && !input.includes('T')) {
+        // ئەگەر کات بوو وەک 14:30:00
+        const parts = input.split(':');
+        h = parseInt(parts[0]);
+        m = parts[1].substring(0, 2);
+    } else {
+        // ئەگەر Date یان ISO string بوو
+        const d = new Date(input);
+        h = d.getHours();
+        m = String(d.getMinutes()).padStart(2, '0');
+    }
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    // گەڕاندنەوەی کاتەکە بە شێوازی ئینگلیزی LTR (نموونە: 08:30 AM)
+    return `\u200E${String(h).padStart(2, '0')}:${m} ${ampm}`;
+}
 
 // فەنکشن بۆ دیاریکردنی سەرەتا و کۆتایی ڕۆژی ئێستا
 function getTodayBounds() {
@@ -240,7 +274,7 @@ function toggleToCheckoutUI(checkInTime) {
     // نیشاندانی کاتی هاتن
     if (checkInInfo) checkInInfo.style.display = 'inline-flex';
     if (arrivalTime) {
-        arrivalTime.innerText = new Date(checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        arrivalTime.innerText = formatTime12(checkInTime);
     }
 }
 
@@ -764,6 +798,419 @@ function renderProfileDisplay() {
         roleDisplay = `${roleDisplay} ${translations[currentLang].at} ${userProfile.branches.branch_id} | ${userProfile.branches.branch_name}`;
     }
     if (roleLabel) roleLabel.innerText = roleDisplay;
+
+    // ئەگەر بەڕێوەبەر یان یاریدەدەری بنکە بوو، بەشی بەڕێوەبردن کارا بکە
+    if (userProfile.role === 'sub-admin' || userProfile.role === 'assistant-manager') {
+        initSubAdminPanel();
+    }
+}
+
+async function initSubAdminPanel() {
+    // دروستکردنی کۆنتێنەری بەڕێوەبردن لە ژێر کالێندەرەکە
+    const container = document.querySelector('.dashboard-container');
+    const panel = document.createElement('div');
+    panel.className = 'status-card sub-admin-panel';
+    panel.style.marginTop = '20px';
+    panel.innerHTML = `
+        <h4 style="margin-bottom:15px; font-size:0.9rem; color:var(--primary);">
+            <i class="fas fa-users-cog"></i> ${translations[currentLang].branchManagement}
+        </h4>
+        <div class="custom-select" id="staffSelectDropdown" onclick="toggleCustomDropdown(event, 'staffSelectDropdown')" style="margin-bottom:10px;">
+            <div class="select-trigger">
+                <span class="selected-text">${translations[currentLang].selectStaff}...</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="options-list" id="staffOptionsList"></div>
+        </div>
+        <div id="staffActions" style="display:none; gap:10px; flex-direction:column; margin-top:10px;">
+            <button class="checkin-btn history-btn" onclick="viewSelectedStaffAttendance(this)" style="margin:0; height:38px; font-size:0.8rem;">
+                <i class="fas fa-history"></i> ${translations[currentLang].viewHistory}
+            </button>
+            <div id="staffCalendarWrapper" style="max-height: 0; opacity: 0; overflow: hidden; visibility: hidden; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); transform-origin: top;">
+                <div id="staffCalendarView" class="calendar-container" style="margin-top: 10px; border: 1px solid var(--border-color); background: var(--card-bg);"></div>
+            </div>
+            <div class="justification-area" style="border:1px solid var(--border-color); padding:8px; border-radius:12px; background:var(--bg-color);">
+                <label style="font-size:0.65rem;"><i class="fas fa-plane-departure"></i> ${translations[currentLang].leaveManagement}</label>
+                <div class="date-range-group" style="margin-bottom:12px; display: flex; gap: 6px;">
+                    <input type="date" id="subLeaveStart" class="glass-input" style="height:32px; font-size:0.65rem; padding: 0 4px; flex: 1; min-width: 0;" onchange="selectedLeaveStartDate=this.value">
+                    <input type="date" id="subLeaveEnd" class="glass-input" style="height:32px; font-size:0.65rem; padding: 0 4px; flex: 1; min-width: 0;" onchange="selectedLeaveEndDate=this.value">
+                </div>
+                <div id="hourlyTimeInputs" class="date-range-group" style="display:none; margin-bottom:8px; gap: 6px;">
+                    <input type="time" id="subLeaveStartTime" class="glass-input" style="height:32px; font-size:0.65rem; padding: 0 4px; flex: 1; min-width: 0;" onchange="selectedLeaveStartTime=this.value">
+                    <input type="time" id="subLeaveEndTime" class="glass-input" style="height:32px; font-size:0.65rem; padding: 0 4px; flex: 1; min-width: 0;" onchange="selectedLeaveEndTime=this.value">
+                </div>
+                <div class="custom-select" id="subLeaveReasonSelect" onclick="toggleCustomDropdown(event, 'subLeaveReasonSelect')" style="margin-bottom:8px;">
+                    <div class="select-trigger" style="height:30px; font-size:0.7rem;">
+                        <span class="selected-text">${translations[currentLang].selectLeaveReason}</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="options-list">
+                        <div class="option" onclick="selectSubLeaveReason(event, 'sickLeave', '${translations[currentLang].sickLeave}')" style="font-size:0.7rem; padding:6px 8px;">${translations[currentLang].sickLeave}</div>
+                        <div class="option" onclick="selectSubLeaveReason(event, 'regularLeave', '${translations[currentLang].regularLeave}')" style="font-size:0.7rem; padding:6px 8px;">${translations[currentLang].regularLeave}</div>
+                        <div class="option" onclick="selectSubLeaveReason(event, 'maternityLeave', '${translations[currentLang].maternityLeave}')" style="font-size:0.7rem; padding:6px 8px;">${translations[currentLang].maternityLeave}</div>
+                        <div class="option" onclick="selectSubLeaveReason(event, 'longTermLeave', '${translations[currentLang].longTermLeave}')" style="font-size:0.7rem; padding:6px 8px;">${translations[currentLang].longTermLeave}</div>
+                        <div class="option" onclick="selectSubLeaveReason(event, 'hourlyLeave', '${translations[currentLang].hourlyLeave}')" style="font-size:0.7rem; padding:6px 8px;">${translations[currentLang].hourlyLeave}</div>
+                    </div>
+                </div>
+                <button class="login-btn" onclick="saveStaffLeave()" style="padding:6px 12px; font-size:0.7rem;">
+                    <i class="fas fa-save"></i> ${translations[currentLang].saveLeave}
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(panel);
+
+    // هێنانی فەرمانبەرانی هەمان بنکە
+    const { data: staff } = await client
+        .from('profiles') 
+        .select('id, full_name')
+        .eq('branch_id', userProfile.branch_id);
+
+    if (staff) {
+        staffInBranch = staff; // Assign the fetched staff to the global variable
+        const optionsList = document.getElementById('staffOptionsList');
+        staff.forEach(s => {
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerText = s.full_name;
+            div.onclick = (e) => selectStaffOption(e, s.id, s.full_name);
+            optionsList.appendChild(div);
+        });
+    }
+}
+
+function toggleCustomDropdown(event, id) {
+    if (event) event.stopPropagation();
+    const el = document.getElementById(id);
+    const isActive = el.classList.contains('active');
+    document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('active'));
+    if (!isActive) el.classList.add('active');
+}
+
+function selectStaffOption(event, id, name) {
+    if (event) event.stopPropagation();
+    selectedStaffId = id;
+    const drop = document.getElementById('staffSelectDropdown');
+    drop.querySelector('.selected-text').innerText = name;
+    drop.querySelectorAll('.option').forEach(opt => opt.classList.toggle('selected', opt.innerText === name));
+    drop.classList.remove('active');
+
+    document.getElementById('staffActions').style.display = 'flex';
+    
+    // ئەگەر بەرپرسی بنکە ناوی خۆی هەڵبژارد، دوگمەی مێژوو بشارەوە چونکە کالێندەری یەکەم هی خۆیەتی
+    const historyBtn = document.querySelector('.sub-admin-panel .history-btn');
+    if (historyBtn) {
+        historyBtn.style.display = (id === currentUser.id) ? 'none' : 'flex';
+    }
+
+    // شاردنەوەی کالێندەری فەرمانبەری پێشوو ئەگەر کراوە بوو
+    const wrapper = document.getElementById('staffCalendarWrapper');
+    wrapper.style.maxHeight = '0';
+    wrapper.style.opacity = '0';
+    wrapper.style.visibility = 'hidden';
+}
+
+function selectSubLeaveReason(event, key, text) {
+    if (event) event.stopPropagation();
+    selectedLeaveReason = key;
+    const drop = document.getElementById('subLeaveReasonSelect');
+    drop.querySelector('.selected-text').innerText = text;
+    
+    // نیشاندانی کاتژمێرەکان تەنها ئەگەر مۆڵەتی کاتی بێت
+    const timeInputs = document.getElementById('hourlyTimeInputs');
+    if (timeInputs) timeInputs.style.display = (key === 'hourlyLeave') ? 'flex' : 'none';
+    
+    drop.querySelectorAll('.option').forEach(opt => opt.classList.toggle('selected', opt.innerText === text));
+    drop.classList.remove('active');
+}
+
+// داخستنی لیستەکان ئەگەر کلیک لە دەرەوە کرا
+window.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select').forEach(s => s.classList.remove('active'));
+});
+
+// فەنکشنی نوێ بۆ ڕێندەرکردنی کالێندەری فەرمانبەر لە شوێنێکی جیاواز
+function renderStaffCalendar(data, staffId) {
+    lastViewedStaffId = staffId;
+    const view = document.getElementById('staffCalendarView');
+    const wrapper = document.getElementById('staffCalendarWrapper');
+    if (!view || !wrapper) return;
+
+    wrapper.style.maxHeight = '600px';
+    wrapper.style.opacity = '1';
+    wrapper.style.visibility = 'visible';
+    view.innerHTML = ""; // پاککردنەوەی پێشوو
+    
+    const year = staffViewDate.getFullYear();
+    const month = staffViewDate.getMonth();
+    const monthName = new Intl.DateTimeFormat(currentLang === 'ku' ? 'ku-IQ' : 'ar-IQ', { month: 'long', year: 'numeric' }).format(staffViewDate);
+    
+    const header = document.createElement('div');
+    header.className = 'calendar-header';
+    header.innerHTML = `
+        <button class="icon-btn calendar-nav-btn" onclick="changeStaffMonth(-1)"><i class="fas fa-chevron-right"></i></button>
+        <h4 id="staffMonthDisplay" style="font-size:0.85rem; margin:0; color:var(--primary); font-weight:700;">${monthName}</h4>
+        <button class="icon-btn calendar-nav-btn" onclick="changeStaffMonth(1)"><i class="fas fa-chevron-left"></i></button>
+    `;
+    view.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'calendar-grid';
+    
+    const dayNames = currentLang === 'ku' ? ["ش", "1ش", "2ش", "3ش", "4ش", "5ش", "هـ"] : ["س", "ح", "ن", "ث", "ر", "خ", "ج"];
+    dayNames.forEach(d => {
+        grid.innerHTML += `<div class="calendar-day-name" style="font-size:0.65rem;">${d}</div>`;
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const spaces = (firstDay + 1) % 7;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    for (let i = 0; i < spaces; i++) grid.innerHTML += `<div></div>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const record = data.find(r => r.check_in_time.startsWith(dateStr));
+        const isOnLeave = staffLeaveData.some(l => dateStr >= l.start_date && dateStr <= l.end_date);
+        const dayDate = new Date(year, month, d);
+        const dayOfWeek = dayDate.getDay();
+        const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6);
+        const isPastDay = (dayDate < today);
+        
+        let className = "calendar-day";
+        if (isWeekend) className += " weekend-default-day";
+        if (record) className += " has-record";
+        else if (isOnLeave) className += " calendar-leave";
+        else if (isPastDay && !isWeekend) className += " missed-day";
+        if (today.toDateString() === dayDate.toDateString()) className += " today";
+        
+        const dayEl = document.createElement('div');
+        dayEl.className = className;
+        dayEl.style.fontSize = "0.75rem";
+        dayEl.innerText = d;
+        dayEl.onclick = () => showStaffDayDetails(record, dateStr, staffId); // بەکارهێنانی ئایدی ناوخۆیی
+        grid.appendChild(dayEl);
+    }
+    view.appendChild(grid);
+}
+
+function changeStaffMonth(step) {
+    staffViewDate.setMonth(staffViewDate.getMonth() + step);
+    renderStaffCalendar(staffAttendanceData, lastViewedStaffId);
+}
+
+async function viewSelectedStaffAttendance(clickedBtn) {
+    if (!selectedStaffId) return;
+    
+    const wrapper = document.getElementById('staffCalendarWrapper');
+    // ئەگەر کالێندەرەکە کراوە بوو و هەمان فەرمانبەر هەڵبژێردرابوو، دایبخە (Toggle)
+    const isVisible = wrapper.style.maxHeight !== '0px' && wrapper.style.maxHeight !== '';
+    if (isVisible && lastViewedStaffId === selectedStaffId) {
+        wrapper.style.maxHeight = '0';
+        wrapper.style.opacity = '0';
+        wrapper.style.visibility = 'hidden';
+        return;
+    }
+
+    const staffIdToView = selectedStaffId; // جێگیرکردنی ئایدی فەرمانبەر
+    
+    const btn = clickedBtn || document.querySelector('.sub-admin-panel .history-btn');
+    const originalHTML = btn.innerHTML;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${translations[currentLang].waitText}`;
+    
+    const { data: attendance } = await client
+        .from('attendance')
+        .select('check_in_time, check_out_time')
+        .eq('user_id', selectedStaffId);
+    
+    const { data: leaves } = await client
+        .from('leaves')
+        .select('start_date, end_date, reason, start_time, end_time')
+        .eq('user_id', selectedStaffId);
+
+    btn.innerHTML = originalHTML;
+    if (attendance) {
+        staffAttendanceData = attendance;
+        staffLeaveData = leaves || [];
+        renderStaffCalendar(attendance, staffIdToView);
+    }
+}
+
+// New function to show staff attendance details in a read-only modal
+async function showStaffDayDetails(record, dateStr, staffId) {
+    if (!staffDetailModal) {
+        staffDetailModal = document.createElement('div');
+        staffDetailModal.id = 'staffDetailModal';
+        staffDetailModal.className = 'modal-overlay';
+        staffDetailModal.onclick = (e) => { if (e.target === staffDetailModal) staffDetailModal.style.display = 'none'; };
+        document.body.appendChild(staffDetailModal);
+    }
+
+    // نیشاندانی مۆداڵەکە یەکسەر بە دۆخی بارکردنەوە
+    staffDetailModal.style.display = 'flex';
+    staffDetailModal.innerHTML = `
+        <div class="modal-window update-card" style="max-width:380px;">
+            <div class="update-body" style="padding: 40px; text-align: center;">
+                <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: var(--primary);"></i>
+                <p style="margin-top: 15px;">${translations[currentLang].waitText}</p>
+            </div>
+        </div>
+    `;
+
+    const staff = staffInBranch.find(s => s.id === staffId);
+    const staffName = staff ? staff.full_name : translations[currentLang].employee;
+
+    const leave = staffLeaveData.find(l => dateStr >= l.start_date && dateStr <= l.end_date);
+    const isOnLeave = !!leave;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    try {
+        // هێنانی ڕوونکردنەوە لە داتابەیس
+    const { data: justification, error: justError } = await client
+        .from('justifications')
+        .select('reason')
+        .eq('user_id', staffId)
+        .eq('date', dateStr)
+        .maybeSingle();
+
+    let justificationContent = translations[currentLang].noJustRecorded;
+    if (justification && justification.reason) {
+        justificationContent = justification.reason;
+    }
+
+    // دروستکردنی ناوەڕۆکی وردەکاری دەوام یان مۆڵەت
+    let detailsHtml = '';
+    
+    // ١. پشکنین بۆ ئامادەبوون (Attendance)
+    if (record) {
+        detailsHtml += `
+            <div class="detail-text" style="border-right: 4px solid #22c55e; background: rgba(34, 197, 94, 0.05);">
+                <i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> 
+                <div>${translations[currentLang].arrival}: <b>${formatTime12(record.check_in_time)}</b></div>
+            </div>
+            <div class="detail-text" style="border-right: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+                <i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> 
+                <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? formatTime12(record.check_out_time) : translations[currentLang].notRecorded}</b></div>
+            </div>
+        `;
+    }
+
+    // ٢. پشکنین بۆ مۆڵەت (Leave) - هەردووکیان پێکەوە نیشان دەدات ئەگەر هەبوو
+    if (isOnLeave) {
+        detailsHtml += `
+            <div class="detail-text" style="border-right: 4px solid #ffc107; background: rgba(255, 193, 7, 0.05); justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="fas fa-plane-departure" style="color: #ffc107;"></i> 
+                    <div>
+                        ${translations[currentLang].reasonForLeave}: <b>${translations[currentLang][leave.reason] || leave.reason}</b>
+                        ${leave.start_time ? `<br><small style="color:var(--text-sub);">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : ''}
+                    </div>
+                </div>
+                <button class="btn-delete" onclick="deleteStaffLeave('${staffId}', '${leave.start_date}')" style="width: 32px !important; height: 32px !important; border-radius: 8px !important; margin: 0 !important;">
+                    <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
+                </button>
+            </div>
+        `;
+    }
+    
+    // ٣. نیشاندانی نەهاتوو تەنها ئەگەر هیچ کامیان نەبوو
+    if (!record && !isOnLeave && dateStr <= todayStr) {
+        detailsHtml = `
+            <div class="detail-text" style="border-right: 4px solid #ef4444; justify-content: center; color: #991b1b; background: #fef2f2;">
+                <i class="fas fa-user-slash"></i> <b>${translations[currentLang].absentStat}</b>
+            </div>
+        `;
+    }
+
+    staffDetailModal.innerHTML = `
+        <div class="modal-window update-card" style="max-width:380px;">
+            <div class="update-header history-header">
+                <div class="update-icon-wrapper">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+            </div>
+            <div class="update-body">
+                <h3 style="margin-bottom:5px;">${translations[currentLang].staffAttendanceDetails}</h3>
+                <p style="font-size:0.8rem; color:var(--text-sub); margin-bottom:15px;">${staffName} - ${translations[currentLang].date} ${dateStr}</p>
+                
+                ${detailsHtml}
+
+                <div class="justification-area" style="margin-top:20px; border-top:1px dashed var(--border-color); padding-top:15px;">
+                    <label style="font-size:0.8rem; font-weight:700; color:var(--text-sub); margin-bottom:8px; display:block;">
+                        <i class="fas fa-file-signature"></i> ${translations[currentLang].justification}
+                    </label>
+                    <div class="justification-view-box" style="min-height: 60px; font-size:0.85rem;">
+                        ${justificationContent}
+                    </div>
+                </div>
+
+                <button class="login-btn" onclick="document.getElementById('staffDetailModal').style.display='none'" style="margin-top:20px;">
+                    <span data-i18n="close">${translations[currentLang].close}</span>
+                </button>
+            </div>
+        </div>
+    `;
+    } catch (err) {
+        staffDetailModal.style.display = 'none';
+        console.error("Error opening staff details:", err);
+    }
+}
+
+async function saveStaffLeave() {
+    if (!selectedStaffId || !selectedLeaveStartDate || !selectedLeaveEndDate || !selectedLeaveReason) {
+        alert(translations[currentLang].selectDates);
+        return;
+    }
+
+    const saveBtn = document.querySelector('.sub-admin-panel .login-btn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+
+    const leaveData = {
+        user_id: selectedStaffId,
+        start_date: selectedLeaveStartDate,
+        end_date: selectedLeaveEndDate,
+        reason: selectedLeaveReason
+    };
+
+    if (selectedLeaveReason === 'hourlyLeave') {
+        leaveData.start_time = selectedLeaveStartTime;
+        leaveData.end_time = selectedLeaveEndTime;
+    }
+
+    const { error } = await client.from('leaves').insert([leaveData]);
+
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalText;
+
+    if (!error) {
+        alert(translations[currentLang].leaveSavedSuccess);
+    } else {
+        if (error.code === '23505') alert("ئەم فەرمانبەرە پێشتر مۆڵەتی بۆ ئەم ڕێکەوتە تۆمار کراوە");
+        else alert("Error: " + error.message);
+    }
+}
+
+async function deleteStaffLeave(staffId, startDate) {
+    if (!confirm(translations[currentLang].confirmDeleteLeave)) return;
+    
+    const { error } = await client
+        .from('leaves')
+        .delete()
+        .eq('user_id', staffId)
+        .eq('start_date', startDate);
+
+    if (!error) {
+        alert(translations[currentLang].leaveDeletedSuccess);
+        if (staffDetailModal) staffDetailModal.style.display = 'none';
+        // دووبارە بارکردنەوەی داتاکان بۆ نوێکردنەوەی کالێندەرەکە
+        viewSelectedStaffAttendance(); 
+    } else {
+        alert("Error: " + error.message);
+    }
 }
 
 function updateStatus(msg, type) {
@@ -789,13 +1236,19 @@ let attendanceData = [];
 
 // ١. وەرگرتنی هەموو تۆمارەکانی فەرمانبەر لە سوپابەیس
 async function fetchAttendance() {
-    const { data, error } = await client
+    const { data: attendance, error: attError } = await client
         .from('attendance')
         .select('check_in_time, check_out_time')
         .eq('user_id', currentUser.id);
 
-    if (!error) {
-        attendanceData = data;
+    const { data: leaves, error: leaveError } = await client
+        .from('leaves')
+        .select('start_date, end_date, reason, start_time, end_time')
+        .eq('user_id', currentUser.id);
+
+    if (!attError && !leaveError) {
+        attendanceData = attendance;
+        userLeaves = leaves || [];
         renderCalendar();
     }
 }
@@ -833,6 +1286,7 @@ function renderCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const record = attendanceData.find(r => r.check_in_time.startsWith(dateStr));
+        const isOnLeave = userLeaves.some(l => dateStr >= l.start_date && dateStr <= l.end_date);
         const dayDate = new Date(year, month, day);
         const dayOfWeek = dayDate.getDay(); // 0=Sun, 5=Fri, 6=Sat
         const isWeekend = (dayOfWeek === 5 || dayOfWeek === 6); // 5 for Friday, 6 for Saturday
@@ -846,6 +1300,8 @@ function renderCalendar() {
 
         if (record) {
             className += " has-record";
+        } else if (isOnLeave) {
+            className += " calendar-leave";
         } else if (isPastDay && !isWeekend) {
             // تەنها ڕۆژانی ڕابردووی نا-پشوو کە تۆماریان نییە بە سوور دیاری دەکرێن
             className += " missed-day";
@@ -872,14 +1328,29 @@ function showDayDetails(record, dateStr) {
     if (record) {
         document.getElementById('detailIn').style.display = 'flex';
         document.getElementById('detailOut').style.display = 'flex';
-        document.getElementById('detailIn').innerHTML = `<i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> <div>${translations[currentLang].arrival}: <b>${new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true})}</b></div>`;
-        document.getElementById('detailOut').innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : translations[currentLang].notRecorded}</b></div>`;
+        document.getElementById('detailIn').innerHTML = `<i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> <div>${translations[currentLang].arrival}: <b>${formatTime12(record.check_in_time)}</b></div>`;
+        document.getElementById('detailOut').innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? formatTime12(record.check_out_time) : translations[currentLang].notRecorded}</b></div>`;
     } else {
-        document.getElementById('detailOut').style.display = 'none';
-        document.getElementById('detailIn').innerHTML = `<div style="text-align: center; width: 100%; padding: 20px 0; color: var(--text-sub);">
-            <i class="fas fa-calendar-times" style="font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
-            ${translations[currentLang].recordNotFound}
-        </div>`;
+        // پشکنین ئەگەر فەرمانبەرەکە لە مۆڵەتدا بێت بۆ ئەم ڕێکەوتە
+        const leave = userLeaves.find(l => dateStr >= l.start_date && dateStr <= l.end_date);
+        if (leave) {
+            document.getElementById('detailOut').style.display = 'none';
+            document.getElementById('detailIn').style.display = 'flex';
+            document.getElementById('detailIn').innerHTML = `
+                <div class="detail-text" style="border-right: 4px solid #ffc107; background: rgba(255, 193, 7, 0.05); width: 100%; justify-content: center;">
+                    <i class="fas fa-plane-departure" style="color: #ffc107;"></i> 
+                    <div>
+                        ${translations[currentLang].reasonForLeave}: <b>${translations[currentLang][leave.reason] || leave.reason}</b>
+                        ${leave.start_time ? `<br><small style="opacity:0.7;">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : ''}
+                    </div>
+                </div>`;
+        } else {
+            document.getElementById('detailOut').style.display = 'none';
+            document.getElementById('detailIn').innerHTML = `<div style="text-align: center; width: 100%; padding: 20px 0; color: var(--text-sub);">
+                <i class="fas fa-calendar-times" style="font-size: 2.5rem; display: block; margin-bottom: 10px; opacity: 0.5;"></i>
+                ${translations[currentLang].recordNotFound}
+            </div>`;
+        }
     }
 
     // هێنانی ڕوونکردنەوە ئەگەر پێشتر نێردرابێت
