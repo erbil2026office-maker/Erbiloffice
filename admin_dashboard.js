@@ -266,7 +266,6 @@ function renderLeaveTypeCheckboxes() {
     const leaveItem = document.createElement('div');
     leaveItem.className = 'filter-item';
     leaveItem.id = 'leaveCheckboxFilter';
-    leaveItem.style.gridColumn = 'span 3'; // زیادکردنی پانتایی بۆ ئەوەی هەموو چێکبۆکسەکان لەسەر یەک ڕیز جێگەیان ببێتەوە
 
     const label = document.createElement('label');
     label.innerHTML = `<i class="fas fa-plane-departure"></i> ${translations[currentLang].filterByLeave}`;
@@ -300,11 +299,8 @@ function renderLeaveTypeCheckboxes() {
     if (actions) {
         // بردنی دوگمەکان بۆ ئەوپەڕی لای چەپ لە سیستەمی RTL
         actions.style.display = 'flex';
-        actions.style.justifySelf = 'end'; // پاڵنانی تەواوی خانەکە بۆ لای چەپ (End)
         actions.style.gap = '10px';
         actions.style.alignItems = 'center';
-        actions.style.marginRight = 'auto'; // گۆڕین بۆ auto بۆ ئەوەی دوگمەکان بە تەواوی پاڵ بنرێن بۆ لای چەپ
-        actions.style.gridColumn = 'span 1';
 
         filterGrid.insertBefore(leaveItem, actions);
         

@@ -469,6 +469,16 @@ body {
     transition: 0.2s;
 }
 
+/* جێگیرکردنی ستایلەکانی لاپتۆپ لە لایەن CSS نەک JS */
+#leaveCheckboxFilter {
+    grid-column: span 3;
+}
+
+.filter-actions {
+    grid-column: span 1;
+    margin-right: auto;
+}
+
 /* Leave Checkbox Filter Styles */
 .leave-checkbox-container {
     background: var(--card-bg);
@@ -476,7 +486,7 @@ body {
     border-radius: 12px;
     padding: 5px 12px;
     display: flex;
-    flex-wrap: nowrap; /* ڕێگری لە شکاندنەوەی ڕیز بۆ ئەوەی هەمووی لەسەر یەک هێڵ بن */
+    flex-wrap: nowrap;
     gap: 15px;
     min-height: 38px;
     align-items: center;
@@ -1130,8 +1140,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     }
 
     .filter-grid { 
-        grid-template-columns: 1fr 1fr !important; 
-        gap: 10px !important; 
+        grid-template-columns: 1fr 1fr !important;
+        gap: 12px !important;
     }
 
     .filter-item label {
@@ -1140,8 +1150,23 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
         gap: 4px !important;
     }
 
-    .filter-item:first-child { grid-column: span 2; } /* گەڕانی ناو پڕ بە شاشە */
-    .filter-actions { grid-column: span 1; } /* دوگمەی پرێنت لە تەنیشت دۆخ */
+    .filter-item:first-child, 
+    #leaveCheckboxFilter { 
+        grid-column: span 2 !important; 
+    }
+
+    .leave-checkbox-container {
+        flex-wrap: wrap !important;
+        padding: 10px !important;
+    }
+
+    .filter-actions { 
+        grid-column: span 2 !important; 
+        margin-right: 0 !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+
     .print-btn { width: 100% !important; height: 38px !important; font-size: 0.8rem !important; padding: 0 10px !important; }
     
     .glass-input, .select-trigger { height: 38px !important; font-size: 0.8rem !important; }
