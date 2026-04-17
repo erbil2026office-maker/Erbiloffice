@@ -14,6 +14,7 @@ let selectedBranchInModal = null; // بۆ هەڵگرتنی بنکەی دیاری
 let selectedLeaveStartDate = null;
 let selectedLeaveEndDate = null;
 let selectedLeaveReasonInModal = null;
+let selectedRoleInModal = null; // بۆ هەڵگرتنی ڕۆڵی دیاریکراو لە مۆداڵ
 
 // فەنکشنی یاریدەدەر بۆ گۆڕینی کات لە ٢٤ کاتژمێرییەوە بۆ ١٢ کاتژمێری LTR
 function formatTime12(input) {
@@ -265,7 +266,7 @@ function renderLeaveTypeCheckboxes() {
     const leaveItem = document.createElement('div');
     leaveItem.className = 'filter-item';
     leaveItem.id = 'leaveCheckboxFilter';
-    leaveItem.style.gridColumn = 'span 2'; // پێدانی پانتایی زیاتر بۆ چیک-بۆکسەکان
+    leaveItem.style.gridColumn = 'span 3'; // زیادکردنی پانتایی بۆ ئەوەی هەموو چێکبۆکسەکان لەسەر یەک ڕیز جێگەیان ببێتەوە
 
     const label = document.createElement('label');
     label.innerHTML = `<i class="fas fa-plane-departure"></i> ${translations[currentLang].filterByLeave}`;
@@ -297,13 +298,13 @@ function renderLeaveTypeCheckboxes() {
     // جێگیرکردنی پێش دوگمەی پرێنت
     const actions = filterGrid.querySelector('.filter-actions');
     if (actions) {
-        // دڵنیابوونەوە لەوەی دوگمەکان لە تەنیشت یەکن و ناچنە سەر یەک
+        // بردنی دوگمەکان بۆ ئەوپەڕی لای چەپ لە سیستەمی RTL
         actions.style.display = 'flex';
-        actions.style.flexDirection = 'row';
-        actions.style.flexWrap = 'nowrap';
+        actions.style.justifySelf = 'end'; // پاڵنانی تەواوی خانەکە بۆ لای چەپ (End)
         actions.style.gap = '10px';
         actions.style.alignItems = 'center';
-        actions.style.width = 'max-content';
+        actions.style.marginRight = 'auto'; // گۆڕین بۆ auto بۆ ئەوەی دوگمەکان بە تەواوی پاڵ بنرێن بۆ لای چەپ
+        actions.style.gridColumn = 'span 1';
 
         filterGrid.insertBefore(leaveItem, actions);
         
@@ -313,7 +314,7 @@ function renderLeaveTypeCheckboxes() {
             exportBtn.id = 'exportExcelBtn';
             exportBtn.className = 'print-btn';
             exportBtn.style.background = '#16a34a'; // ڕەنگی سەوز بۆ ئێکسڵ
-            exportBtn.style.margin = '0'; // لابردنی هەموو مارجینەکان بۆ هاوتا بوون
+            exportBtn.style.margin = '0'; 
             exportBtn.innerHTML = `<i class="fas fa-file-excel"></i> ${translations[currentLang].exportExcel}`;
             exportBtn.onclick = handleExportExcel;
             actions.appendChild(exportBtn);
@@ -636,10 +637,6 @@ async function openEmployeeSettings(userId) {
     if (!emp) return;
     selectedUserIdForReset = userId;
 
-    // Reset leave modal fields
-    selectedLeaveStartDate = null;
-    selectedLeaveEndDate = null;
-    selectedLeaveReasonInModal = null;
     let modal = document.getElementById('empSettingsModal');
     if (!modal) {
         modal = document.createElement('div');
@@ -649,21 +646,19 @@ async function openEmployeeSettings(userId) {
         document.body.appendChild(modal);
     }
 
-    // هێنانی مۆڵەتی چالاک یان داهاتووی فەرمانبەرەکە
-    const { data: employeeLeave, error: leaveError } = await adminClient
-        .from('leaves')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('end_date', new Date().toISOString().split('T')[0]) // مۆڵەتەکانی چالاک یان داهاتوو
-        .order('start_date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-    if (leaveError) console.error("Error fetching employee leave:", leaveError);
-
     // Branch selection HTML
     const currentBranchName = branchesCache.find(b => b.branch_id === emp.branch_id)?.branch_name || translations[currentLang].allBranches;
     selectedBranchInModal = emp.branch_id;
+
+    // Role selection logic
+    const rolesList = [
+        { key: 'employee', text: translations[currentLang].employee },
+        { key: 'sub-admin', text: translations[currentLang]['sub-admin'] },
+        { key: 'assistant-manager', text: translations[currentLang]['assistant-manager'] }
+    ];
+    const currentRole = rolesList.find(r => r.key === emp.role) || rolesList[0];
+    selectedRoleInModal = currentRole.key;
+    const currentRoleText = currentRole.text;
 
     const branchOptionsHtml = branchesCache.map(b => `
         <div class="option ${emp.branch_id === b.branch_id ? 'selected' : ''}" onclick="selectModalBranch(event, '${b.branch_id}', '${b.branch_name}')">
@@ -671,27 +666,11 @@ async function openEmployeeSettings(userId) {
         </div>
     `).join('');
 
-    // Leave reason options HTML
-    const leaveReasons = [
-        { key: 'sickLeave', text: translations[currentLang].sickLeave },
-        { key: 'maternityLeave', text: translations[currentLang].maternityLeave },
-        { key: 'longTermLeave', text: translations[currentLang].longTermLeave },
-        { key: 'regularLeave', text: translations[currentLang].regularLeave }
-    ];
-    const leaveReasonOptionsHtml = leaveReasons.map(r => `
-        <div class="option ${employeeLeave?.reason === r.key ? 'selected' : ''}" onclick="selectLeaveReason(event, '${r.key}', '${r.text}')">
+    const roleOptionsHtml = rolesList.map(r => `
+        <div class="option ${emp.role === r.key ? 'selected' : ''}" onclick="selectModalRole(event, '${r.key}', '${r.text}')">
             ${r.text}
         </div>
     `).join('');
-
-    // Pre-fill leave dates if an active leave exists
-    const leaveStartDate = employeeLeave ? employeeLeave.start_date : '';
-    const leaveEndDate = employeeLeave ? employeeLeave.end_date : '';
-    const leaveReasonText = employeeLeave ? translations[currentLang][employeeLeave.reason] : translations[currentLang].selectLeaveReason;
-
-    selectedLeaveStartDate = leaveStartDate;
-    selectedLeaveEndDate = leaveEndDate;
-    selectedLeaveReasonInModal = employeeLeave?.reason || '';
 
     modal.innerHTML = `
         <div class="modal-window compact-settings-modal" style="max-width:340px; padding:15px; border-radius:20px;">
@@ -719,23 +698,16 @@ async function openEmployeeSettings(userId) {
                 </div>
 
                 <div class="settings-group">
-                    <label class="settings-label"><i class="fas fa-plane-departure"></i> ${translations[currentLang].leaveManagement}</label>
-                    <div class="date-range-group">
-                        <input type="date" id="leaveStartDate" class="glass-input" value="${leaveStartDate}" onchange="selectedLeaveStartDate = this.value;">
-                        <input type="date" id="leaveEndDate" class="glass-input" value="${leaveEndDate}" onchange="selectedLeaveEndDate = this.value;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="settings-label" style="margin:0;"><i class="fas fa-user-tag"></i> ${translations[currentLang].collClass}</label>
+                        <button class="mini-action-link" onclick="updateEmployeeRole('${userId}')">${translations[currentLang].change}</button>
                     </div>
-                    <div class="custom-select" id="leaveReasonSelect" onclick="toggleCustomDropdown(event, 'leaveReasonSelect')">
+                    <div class="custom-select" id="modalRoleSelect" onclick="toggleCustomDropdown(event, 'modalRoleSelect')">
                         <div class="select-trigger mini-trigger">
-                            <span class="selected-text">${leaveReasonText}</span>
+                            <span class="selected-text">${currentRoleText}</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
-                        <div class="options-list">${leaveReasonOptionsHtml}</div>
-                    </div>
-                    <div class="settings-actions-row">
-                        <button class="settings-save-btn mini-btn" onclick="saveEmployeeLeave('${userId}')" style="flex: 1;"><i class="fas fa-save"></i> ${translations[currentLang].saveLeave}</button>
-                        <button class="settings-save-btn btn-danger-modern mini-btn" onclick="deleteEmployeeLeave('${userId}')" style="width: 38px; ${!employeeLeave ? 'display: none;' : ''}" id="deleteLeaveBtn">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+                        <div class="options-list">${roleOptionsHtml}</div>
                     </div>
                 </div>
 
@@ -782,64 +754,30 @@ async function updateEmployeeBranch(userId) {
     }
 }
 
-function selectLeaveReason(event, reasonKey, reasonText) {
+function selectModalRole(event, roleKey, roleText) {
     if (event) event.stopPropagation();
-    selectedLeaveReasonInModal = reasonKey;
-    const trigger = document.querySelector('#leaveReasonSelect .selected-text');
-    if (trigger) trigger.innerText = reasonText;
+    selectedRoleInModal = roleKey;
+    const trigger = document.querySelector('#modalRoleSelect .selected-text');
+    if (trigger) trigger.innerText = roleText;
 
-    document.querySelectorAll('#leaveReasonSelect .option').forEach(opt => {
-        opt.classList.toggle('selected', opt.innerText === reasonText);
+    document.querySelectorAll('#modalRoleSelect .option').forEach(opt => {
+        opt.classList.toggle('selected', opt.innerText === roleText);
     });
-    document.getElementById('leaveReasonSelect').classList.remove('active');
+    document.getElementById('modalRoleSelect').classList.remove('active');
 }
 
-async function saveEmployeeLeave(userId) {
-    if (!selectedLeaveStartDate || !selectedLeaveEndDate || !selectedLeaveReasonInModal) {
-        alert(translations[currentLang].selectDates);
-        return;
+async function updateEmployeeRole(userId) {
+    const newRole = selectedRoleInModal;
+    if (confirm(translations[currentLang].confirmBranchChange)) {
+        const { error } = await adminClient.from('profiles').update({ role: newRole }).eq('id', userId);
+        if (!error) {
+            alert(translations[currentLang].successUpdate);
+            loadAttendanceData();
+            document.getElementById('empSettingsModal').style.display = 'none';
+        } else {
+            alert("Error: " + error.message);
+        }
     }
-
-    if (new Date(selectedLeaveStartDate) > new Date(selectedLeaveEndDate)) {
-        alert(translations[currentLang].invalidDateRange);
-        return;
-    }
-
-    if (!confirm(translations[currentLang].confirmSaveLeave)) return;
-
-    const { error } = await adminClient
-        .from('leaves')
-        .upsert({
-            user_id: userId,
-            start_date: selectedLeaveStartDate,
-            end_date: selectedLeaveEndDate,
-            reason: selectedLeaveReasonInModal
-        }, { onConflict: 'user_id,start_date' }); // Assuming one leave per user per start_date
-
-    if (error) {
-        alert("Error: " + error.message);
-    } else {
-        alert(translations[currentLang].leaveSavedSuccess);
-        loadAttendanceData();
-        document.getElementById('empSettingsModal').style.display = 'none';
-    }
-}
-
-async function deleteEmployeeLeave(userId) {
-    if (!selectedLeaveStartDate || !selectedLeaveEndDate) {
-        alert(translations[currentLang].noLeaveRecorded);
-        return;
-    }
-    if (!confirm(translations[currentLang].confirmDeleteLeave)) return;
-
-    const { error } = await adminClient
-        .from('leaves')
-        .delete()
-        .eq('user_id', userId)
-        .eq('start_date', selectedLeaveStartDate); // Delete the specific leave
-
-    if (error) { alert("Error: " + error.message); }
-    else { alert(translations[currentLang].leaveDeletedSuccess); loadAttendanceData(); document.getElementById('empSettingsModal').style.display = 'none'; }
 }
 
 async function resetDeviceID() {
