@@ -145,6 +145,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         loginInputs.forEach(input => {
             input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
         });
+
+        // ڕێگری لە کۆپیکردن و کلیکی ڕاست (ContextMenu) لە هەموو لاپەڕەکاندا
+        document.addEventListener('copy', (e) => e.preventDefault());
+        document.addEventListener('contextmenu', (e) => {
+            // ڕێگە بدە تەنها لە ناو خانەکانی نووسین کلیکی ڕاست کار بکات
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+        });
     }
 });
 

@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ٣. کاشکردنی فایلەکانی ڕێکخستن بۆ خێراکردن (Browser Caching)
     cacheSettingsAssets();
+
+    // ٤. ڕێگری لە کۆپیکردن و کلیکی ڕاست لە مۆبایل و لاپتۆپ
+    document.addEventListener('copy', (e) => e.preventDefault());
+    document.addEventListener('contextmenu', (e) => {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+    });
 });
 
 async function cacheSettingsAssets() {
