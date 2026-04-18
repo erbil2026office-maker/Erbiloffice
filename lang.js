@@ -166,7 +166,23 @@ const translations = {
         viewHistory: "بینینی دوایین هاتن و دەرچوون",
         staffAttendanceDetails: "وردەکاری دەوامی فەرمانبەر",
         filterByLeave: "فلتەر بەپێی جۆری مۆڵەت",
-        exportExcel: "ئێکسپۆڕت (Excel)"
+        exportExcel: "ئێکسپۆڕت (Excel)",
+        weak: "لاواز",
+        medium: "مامناوەند",
+        strong: "بەهێز",
+        veryStrong: "زۆر بەهێز",
+        versionLabel: "وەشان",
+        languageSection: "زمان (Language)",
+        accountSecurity: "گۆڕینی تێپەڕەوشە",
+        currentPassword: "تێپەڕەوشەی ئێستا (کۆن)",
+        newPassword: "تێپەڕەوشەی نوێ",
+        confirmPassword: "دووپاتکردنەوەی تێپەڕەوشەی نوێ",
+        changePasswordBtn: "گۆڕینی تێپەڕەوشە",
+        passNotMatch: "هاوتا نییە",
+        passMatch: "هاوتایە",
+        errorOldPass: "تکایە تێپەڕەوشەی کۆن بنووسە",
+        errorOldPassWrong: "تێپەڕەوشەی کۆن هەڵەیە",
+        passChangedSuccess: "تێپەڕەوشە بە سەرکەوتوویی گۆڕدرا"
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -333,7 +349,23 @@ const translations = {
         viewHistory: "عرض سجل الحضور والانصراف الأخير",
         staffAttendanceDetails: "تفاصيل دوام الموظف",
         filterByLeave: "تصفية حسب نوع الإجازة",
-        exportExcel: "تصدير (Excel)"
+        exportExcel: "تصدير (Excel)",
+        weak: "ضعيف",
+        medium: "متوسط",
+        strong: "قوي",
+        veryStrong: "قوي جداً",
+        versionLabel: "الإصدار",
+        languageSection: "اللغة (Language)",
+        accountSecurity: "تغيير كلمة المرور",
+        currentPassword: "كلمة المرور الحالية (القديمة)",
+        newPassword: "كلمة المرور الجديدة",
+        confirmPassword: "تأكيد كلمة المرور الجديدة",
+        changePasswordBtn: "تغيير كلمة المرور",
+        passNotMatch: "غير متطابق",
+        passMatch: "متطابق",
+        errorOldPass: "يرجى إدخال كلمة المرور القديمة",
+        errorOldPassWrong: "كلمة المرور القديمة غير صحيحة",
+        passChangedSuccess: "تم تغيير كلمة المرور بنجاح"
     }
 };
 

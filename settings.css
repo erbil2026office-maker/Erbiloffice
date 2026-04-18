@@ -1,0 +1,358 @@
+.settings-page {
+    background: var(--bg-color);
+    min-height: 100vh;
+    padding: 100px 20px 30px;
+    display: block;
+    overflow-x: hidden;
+    animation: slideInFromRight 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* شاردنەوەی ناوەڕۆک لە سەرەتادا - لادانی inline style */
+#settingsContent {
+    display: none;
+}
+
+.settings-container {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+@keyframes slideInFromRight {
+    from { transform: translateX(100%); } /* لابردنی ئۆپاسیتی بۆ ئەوەی لاپەڕەکە شەفاف نەبێت */
+    to { transform: translateX(0); }
+}
+
+/* کڵاس بۆ کاتی گەڕانەوە */
+.page-slide-out-right {
+    animation: slideOutToRight 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards !important;
+    pointer-events: none;
+}
+
+@keyframes slideOutToRight {
+    from { transform: translateX(0); }
+    to { transform: translateX(100%); }
+}
+
+.profile-header-card {
+    padding: 20px !important;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 28px !important;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important; /* شین بۆ مۆر */
+}
+
+.profile-header-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transform: rotate(45deg);
+    animation: shimmerEffect 3s infinite linear;
+    pointer-events: none;
+}
+
+@keyframes shimmerEffect {
+    0% { left: -150%; }
+    50% { left: 150%; }
+    100% { left: 150%; }
+}
+
+.profile-header-card h1, .profile-header-card .version-badge {
+    color: white !important;
+}
+
+.header-main-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-container {
+    position: relative;
+    width: 65px;
+    height: 65px;
+    background: white;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    border: 1px solid var(--border-color);
+}
+
+.app-logo-img {
+    width: 70%;
+    object-fit: contain;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    background: #22c55e;
+    border: 3px solid var(--card-bg);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.app-identity h1 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-top: 4px;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.version-icon {
+    font-size: 0.75rem;
+    color: #4ade80; /* ڕەنگی سەوزی گەش بۆ نیشاندانی سەقامگیری ڤێرژنەکە */
+}
+
+.logout-section {
+    padding: 10px !important;
+    margin-top: 5px;
+    border-color: rgba(239, 68, 68, 0.1);
+}
+
+.logout-action-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--card-bg);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.logout-action-btn:hover {
+    background: #ef4444;
+    color: white;
+    border-color: #ef4444;
+    box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+}
+
+.lang-selector-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.lang-option-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px;
+    border-radius: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.lang-option-btn img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.lang-option-btn:hover {
+    border-color: var(--primary);
+    background: var(--card-bg);
+}
+
+.section-card {
+    text-align: right;
+    padding: 16px !important;
+    margin-bottom: 10px;
+    border-radius: 24px !important;
+}
+
+.compact-card {
+    padding: 14px 18px !important;
+}
+
+.compact-card .input-group {
+    margin-bottom: 10px;
+}
+
+.compact-card .input-group label {
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.update-action-btn {
+    margin-top: 10px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--primary), #4f46e5);
+    border-radius: 14px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+.update-action-btn:disabled {
+    background: #94a3b8 !important; /* ڕەنگی خۆڵەمێشی مۆدێرن */
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Password Strength UI */
+.strength-meter {
+    height: 4px;
+    background: var(--input-bg);
+    border-radius: 10px;
+    margin-top: 6px;
+    overflow: hidden;
+    display: none; /* شاردنەوە لە سەرەتادا */
+}
+
+.strength-meter .bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.4s ease;
+}
+
+.strength-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-top: 4px;
+    display: none; /* شاردنەوە لە سەرەتادا */
+    align-items: center;
+    justify-content: center;
+    padding: 3px 12px;
+    border-radius: 6px;
+    transition: all 0.4s ease;
+    line-height: 1;
+}
+
+.strength-label:not(:empty) {
+    margin-bottom: 2px;
+}
+
+.match-feedback {
+    font-size: 0.7rem;
+    margin-top: 6px;
+    display: none;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+}
+
+.confirm-modal-window {
+    max-width: 340px !important;
+    padding: 30px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Confirmation Modal Internal Styles - چارەسەری ئینلاین ستایلەکان */
+.modal-icon-wrapper {
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.modal-shield-icon {
+    font-size: 2.5rem;
+}
+
+.confirm-modal-title {
+    margin-bottom: 10px;
+}
+
+.confirm-modal-msg {
+    font-size: 0.9rem;
+    color: var(--text-sub);
+    margin-bottom: 25px;
+}
+
+.confirm-btn-group {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.btn-no {
+    background: var(--input-bg) !important;
+    color: var(--text-main) !important;
+    flex: 1;
+}
+
+.btn-yes {
+    flex: 1;
+}
+
+.confirm-modal-window .login-btn {
+    height: 45px;
+    font-size: 0.9rem;
+}
+
+/* States */
+.weak { background: #ef4444 !important; color: white !important; }
+.medium { background: #f59e0b !important; color: white !important; }
+.strong { background: #22c55e !important; color: white !important; }
+.very-strong { background: #0ea5e9 !important; color: white !important; }
+
+.match-success { color: #22c55e; display: flex; }
+.match-error { color: #ef4444; display: flex; }
+
+.back-btn {
+    background: var(--card-bg);
+}
+
+.status-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 12px;
+    z-index: 10000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    display: none;
+}
+
+.developer-credit {
+    direction: ltr; /* پاراستنی ڕیزبەندی ووشە ئینگلیزییەکان لەناو ژینگەی RTL */
+    unicode-bidi: isolate;
+}

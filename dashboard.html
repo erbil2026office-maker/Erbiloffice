@@ -173,11 +173,13 @@
         <div id="pwaIosHint" class="pwa-ios-hint" data-i18n="pwaIOSMsg"></div>
     </div>
 
-    <div class="top-controls">
-        <button class="logout-btn" onclick="handleLogout()" id="logoutBtn" data-i18n="logout" aria-label="Logout">
-            <i class="fas fa-sign-out-alt"></i> <span data-i18n="logout">چوونە دەرەوە</span>
-        </button>
-        <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="Change Theme" data-i18n="changeTheme" aria-label="Change Theme"><i class="fas fa-sun"></i></button>
+    <div class="top-controls justify-end">
+        <div class="top-control-group">
+            <button class="icon-btn settings-toggle-btn" onclick="navigateToSettings()" id="settingsBtn" title="Settings" data-i18n="empSettings" aria-label="Settings">
+                <i class="fas fa-gear"></i>
+            </button>
+            <button class="icon-btn theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="Change Theme" data-i18n="changeTheme" aria-label="Change Theme"><i class="fas fa-sun"></i></button>
+        </div>
     </div>
 
     <script src="lang.js"></script>

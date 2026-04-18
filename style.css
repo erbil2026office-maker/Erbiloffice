@@ -56,6 +56,10 @@
     background: var(--text-sub); /* ڕەنگەکە ناگۆڕێت لە کاتی هۆڤەر */
 }
 
+html {
+    background-color: var(--bg-color); /* دڵنیابوونەوە لەوەی پشتینەی بنەڕەتی ڕەنگێکی جێگیرە */
+}
+
 body {
    background-color: var(--bg-color);
     color: var(--text-main); /* Use new variable name */
@@ -63,8 +67,15 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-     transition: background-color 0.5s ease;
+    transition: background-color 0.5s ease, opacity 0.4s ease, transform 0.4s ease;
     overflow-x: hidden;
+}
+
+.page-slide-left {
+    opacity: 0;
+    transform: translateX(-100px);
+    transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.5s ease;
+    pointer-events: none;
 }
 
 .top-controls {
@@ -78,6 +89,16 @@ body {
     padding: 15px 20px;
     z-index: 100;
     background: transparent;
+}
+
+/* کڵاسی نوێ بۆ جێگیرکردنی دوگمەکان لە لای چەپ بەبێ ئینلاین ستایل */
+.top-controls.justify-end {
+    justify-content: flex-end;
+}
+
+.top-control-group {
+    display: flex;
+    gap: 10px; /* بۆشاییەکی کەم و جوان لە نێوان هەردوو دوگمەکە */
 }
 
 .theme-toggle-btn, .icon-btn {
@@ -111,6 +132,31 @@ body {
     transform: translateY(-2px);
     border-color: var(--primary);
     background: rgba(0, 98, 255, 0.05);
+}
+
+.settings-toggle-btn {
+    margin-left: 0; /* لابردنی مارجین چونکە ئێستا لەناو دیڤێکی Flex دایە */
+}
+
+.settings-toggle-btn i {
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-size: 1.25rem;
+    color: var(--text-main);
+}
+
+.settings-toggle-btn:active {
+    transform: scale(0.9) rotate(-5deg);
+}
+
+.fa-spin-once {
+    animation: settingsSpin 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: var(--primary);
+}
+
+@keyframes settingsSpin {
+    0% { transform: rotate(0deg) scale(1); }
+    40% { transform: rotate(120deg) scale(1.15); }
+    100% { transform: rotate(180deg) scale(1); }
 }
 
 .flag-img {

@@ -780,7 +780,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkAttendanceStatus();
     await fetchAttendance();
     startTracking();
+
+    // کاشکردنی فایلەکانی داشبۆڕد بۆ خێراکردنی ئەزموونی بەکارهێنەر
+    cacheDashboardAssets();
 });
+
+async function cacheDashboardAssets() {
+    if ('caches' in window) {
+        try {
+            const cache = await caches.open('ihec-dashboard-v1');
+            await cache.addAll([
+                'dashboard.html',
+                'dashboard.js',
+                'style.css',
+                'lang.js',
+                'script.js',
+                'assets/icon.png'
+            ]);
+            console.log('Dashboard assets cached successfully.');
+        } catch (err) {
+            console.warn('Dashboard cache failed:', err);
+        }
+    }
+}
 
 function renderProfileDisplay() {
     if (!userProfile) return;
@@ -1226,11 +1248,6 @@ function updateStatus(msg, type) {
     }
 }
 
-async function handleLogout() {
-    await client.auth.signOut();
-    window.location.href = 'index.html';
-}
-
 let currentViewDate = new Date();
 let attendanceData = [];
 
@@ -1531,4 +1548,21 @@ function closeModal(event) {
 function changeMonth(step) {
     currentViewDate.setMonth(currentViewDate.getMonth() + step);
     renderCalendar();
+}
+
+function navigateToSettings() {
+    const btn = document.getElementById('settingsBtn');
+    const icon = btn ? btn.querySelector('i') : null;
+    
+    if (icon) {
+        icon.classList.add('fa-spin-once');
+    }
+
+    // گۆڕینی ئەنیمەیشن بۆ سڵاید بەرەو لای چەپ
+    document.body.classList.add('page-slide-left');
+
+    // کەمکردنەوەی کاتەکە بۆ ئەوەی یەکسەر بارکردن دەستپێبکات، لە کاتێکدا ئەنیمەیشنەکە هێشتا دەڕوات
+    setTimeout(() => {
+        window.location.href = 'settings.html';
+    }, 150); 
 }
