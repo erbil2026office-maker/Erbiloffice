@@ -139,9 +139,9 @@
 .logout-action-btn {
     width: 100%;
     padding: 12px;
-    background: var(--card-bg);
+    background: #ef4444;
+    color: white;
     border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #ef4444;
     border-radius: 16px;
     font-weight: 700;
     font-size: 0.85rem;
@@ -154,8 +154,8 @@
 }
 
 .logout-action-btn:hover {
-    background: #ef4444;
-    color: white;
+     background: var(--card-bg);
+     color: #ef4444;
     border-color: #ef4444;
     box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
 }
