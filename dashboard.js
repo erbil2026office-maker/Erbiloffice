@@ -29,28 +29,28 @@ let selectedLeaveReason = null;
 // فەنکشنی یاریدەدەر بۆ گۆڕینی کات لە ٢٤ کاتژمێرییەوە بۆ ١٢ کاتژمێری
 function formatTime12(input) {
     if (!input) return '';
-    let h, m;
-    if (typeof input === 'string' && input.includes(':') && !input.includes('T')) {
-        // ئەگەر کات بوو وەک 14:30:00
-        const parts = input.split(':');
-        h = parseInt(parts[0]);
-        m = parts[1].substring(0, 2);
-    } else {
-        // ئەگەر Date یان ISO string بوو
-        const d = new Date(input);
-        h = d.getHours();
-        m = String(d.getMinutes()).padStart(2, '0');
+    let d = new Date(input);
+
+    // ئەگەر تەنها کات بوو، ڕێکەوتێکی بۆ زیاد بکە تاوەکو وەک Date بناسرێت
+    if (isNaN(d.getTime()) && typeof input === 'string') {
+        d = new Date(`2000-01-01T${input.includes('T') ? input.split('T')[1] : input}`);
     }
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    // گەڕاندنەوەی کاتەکە بە شێوازی ئینگلیزی LTR (نموونە: 08:30 AM)
-    return `\u200E${String(h).padStart(2, '0')}:${m} ${ampm}`;
+    if (isNaN(d.getTime())) return '--:--';
+
+    try {
+        const options = { timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit', hour12: true };
+        const timeStr = new Intl.DateTimeFormat('en-US', options).format(d);
+        return `\u200E${timeStr}`;
+    } catch (e) {
+        return '--:--';
+    }
 }
 
 // فەنکشن بۆ دیاریکردنی سەرەتا و کۆتایی ڕۆژی ئێستا
 function getTodayBounds(referenceDate = null) {
     // ئەگەر کاتی سێرڤەرمان هەبوو ئەوە بەکاردێنین، ئەگەر نا کاتی مۆبایل
-    const now = referenceDate ? new Date(referenceDate) : new Date();
+    let now = referenceDate ? new Date(referenceDate) : new Date();
+    if (isNaN(now.getTime())) now = new Date(); // ئەگەر کاتی سێرڤەر هەڵە بوو کاتی مۆبایل بەکاربهێنە
     
     const formatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'Asia/Baghdad',

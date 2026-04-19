@@ -19,16 +19,21 @@ let selectedRoleInModal = null; // بۆ هەڵگرتنی ڕۆڵی دیاریکر
 // فەنکشنی یاریدەدەر بۆ گۆڕینی کات لە ٢٤ کاتژمێرییەوە بۆ ١٢ کاتژمێری LTR
 function formatTime12(input) {
     if (!input) return '';
-    const d = new Date(input);
-    // بەکارهێنانی Intl بۆ ناچارکردنی کاتی بەغدا
-    const options = { 
-        timeZone: 'Asia/Baghdad', 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        hour12: true 
-    };
-    const timeStr = new Intl.DateTimeFormat('en-US', options).format(d);
-    return `\u200E${timeStr}`;
+    let d = new Date(input);
+
+    // ئەگەر داتاکە تەنها کات بوو، ڕێکەوتێکی بۆ زیاد دەکەین تاوەکو وەک Date بناسرێت
+    if (isNaN(d.getTime()) && typeof input === 'string') {
+        d = new Date(`2000-01-01T${input.includes('T') ? input.split('T')[1] : input}`);
+    }
+    
+    if (isNaN(d.getTime())) return '--:--';
+
+    try {
+        const options = { timeZone: 'Asia/Baghdad', hour: '2-digit', minute: '2-digit', hour12: true };
+        return `\u200E${new Intl.DateTimeFormat('en-US', options).format(d)}`;
+    } catch (e) {
+        return '--:--';
+    }
 }
 
 let currentFilters = {
@@ -145,7 +150,7 @@ async function loadAttendanceData() {
     try {
         let query = adminClient
             .from('attendance')
-            .select('*, profiles!inner(full_name, branch_id)')
+            .select('*, profiles:user_id!inner(full_name, branch_id)')
             // بەکارهێنانی Offsetی +03:00 بۆ عێراق لە ناو SQL query
             .gte('check_in_time', `${date}T00:00:00+03:00`)
             .lte('check_in_time', `${date}T23:59:59+03:00`);
@@ -153,9 +158,7 @@ async function loadAttendanceData() {
         const { data, error } = await query;
 
         if (error) {
-            console.error("Attendance Query Error:", error);
-            listDiv.innerHTML = `<div class="error-msg">${error.message}</div>`;
-            return;
+            throw new Error(`Attendance: ${error.message}`);
         }
 
     // هێنانی ڕوونکردنەوەکان بە لیست و پشکنینی هەڵە
@@ -164,29 +167,35 @@ async function loadAttendanceData() {
         .select('user_id, reason')
         .eq('date', date);
 
-    if (justError) {
-        console.error("Justification Fetch Error:", justError.message);
-    }
+    if (justError) throw new Error(`Justifications: ${justError.message}`);
 
     // هێنانی مۆڵەتەکان
     const { data: leaves, error: leavesError } = await adminClient
         .from('leaves')
         .select('*');
-    if (leavesError) {
-        console.error("Leaves Fetch Error:", leavesError.message);
-    }
+    
+    if (leavesError) throw new Error(`Leaves: ${leavesError.message}`);
 
     // هێنانی ئادمینەکان بە جیا بۆ ئەوەی هەمیشە هەموویان دیار بن بەبێ گوێدانە فلتەری بنکە
-    const { data: admins } = await adminClient
+    const { data: admins, error: adminError } = await adminClient
         .from('profiles')
-        .select('*, branches(branch_id, branch_name)')
+        .select('*, branches:branch_id(branch_id, branch_name)')
         .eq('role', 'admin')
         .order('full_name');
 
+    if (adminError) throw new Error(`Admins: ${adminError.message}`);
+
     // هێنانی فەرمانبەران بەپێی فلتەری بنکە بۆ لیستی ئامادەبوون
-    let staffQuery = adminClient.from('profiles').select('*, branches(branch_id, branch_name)').neq('role', 'admin');
+    let staffQuery = adminClient
+        .from('profiles')
+        .select('*, branches:branch_id(branch_id, branch_name)')
+        .neq('role', 'admin');
+
     if (branchFilter !== 'all') staffQuery = staffQuery.eq('branch_id', branchFilter);
-    const { data: staff } = await staffQuery.order('full_name');
+    
+    const { data: staff, error: staffError } = await staffQuery.order('full_name');
+
+    if (staffError) throw new Error(`Staff: ${staffError.message}`);
 
         attendanceCache = data || [];
         staffCache = staff || [];
@@ -199,7 +208,7 @@ async function loadAttendanceData() {
         applyFiltersLocally(); // بانگکردنی فلتەرەکان
     } catch (err) {
         console.error("Global load error:", err);
-        listDiv.innerHTML = "کێشەیەک لە بارکردنی داتا ڕوویدا.";
+        listDiv.innerHTML = `<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> هەڵە: ${err.message}</div>`;
     }
 }
 
@@ -229,6 +238,8 @@ function applyFiltersLocally() {
         
         if (record) {
             const checkInDate = new Date(record.check_in_time);
+            if (isNaN(checkInDate.getTime())) return false;
+
             // دەرهێنانی کاتژمێر و خولەک بەپێی کاتی عێراق بۆ فلتەرکردن
             const iraqHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(checkInDate));
             const iraqMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(checkInDate));
@@ -241,8 +252,13 @@ function applyFiltersLocally() {
             if (statusFilter === 'veryLateIn') return inTime > 540;
             
             if (hasExit) {
-                const checkOut = new Date(record.check_out_time);
-                const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
+                const outDate = new Date(record.check_out_time);
+                if (isNaN(outDate.getTime())) return false;
+
+                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(outDate));
+                const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(outDate));
+                const outTime = iraqOutHours * 60 + iraqOutMinutes;
+
                 if (statusFilter === 'earlyOut') return outTime < 870;
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else {
@@ -527,7 +543,10 @@ function renderAttendance(attendance, employees) {
                 // حیسابکردنی جۆری دەرچوون (ئەگەر کرابێت)
                 if (record.check_out_time) {
                     const checkOut = new Date(record.check_out_time);
-                    const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
+                    const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(checkOut));
+                    const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(checkOut));
+                    const outTime = iraqOutHours * 60 + iraqOutMinutes;
+
                     
                     if (outTime < 870) { // پێش 2:30 (14:30)
                        stats.earlyOut++;
@@ -552,8 +571,8 @@ function renderAttendance(attendance, employees) {
                 employeeClassifications.push({ label: translations[currentLang].justification, class: 'badge-blue', icon: 'fas fa-file-signature' });
             }
             
-            const tIn = record ? new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '--:--';
-            const tOut = record?.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}) : '--:--';
+            const tIn = record ? formatTime12(record.check_in_time) : '--:--';
+            const tOut = record?.check_out_time ? formatTime12(record.check_out_time) : '--:--';
             
             // دیاریکردنی تایتڵی ستوونی دۆخ بە شێوەیەکی وورد
             let statusLabel = "";
@@ -860,7 +879,10 @@ function handlePrint() {
             if (statusFilter === 'veryLateIn') return inTime > 540;
             if (record.check_out_time) {
                 const checkOut = new Date(record.check_out_time);
-                const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
+                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(checkOut));
+                const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(checkOut));
+                const outTime = iraqOutHours * 60 + iraqOutMinutes;
+
                 if (statusFilter === 'earlyOut') return outTime < 870;
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else if (statusFilter === 'noExit') return true;
@@ -1012,7 +1034,11 @@ function handleExportExcel() {
             if (statusFilter === 'lateIn') return isOnLeave;
             if (statusFilter === 'veryLateIn') return inTime > 540;
             if (record.check_out_time) {
-                const outTime = new Date(record.check_out_time).getHours() * 60 + new Date(record.check_out_time).getMinutes();
+                const outDate = new Date(record.check_out_time);
+                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(outDate));
+                const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(outDate));
+                const outTime = iraqOutHours * 60 + iraqOutMinutes;
+
                 if (statusFilter === 'earlyOut') return outTime < 870;
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else if (statusFilter === 'noExit') return true;
@@ -1030,8 +1056,8 @@ function handleExportExcel() {
         const employeeLeave = leavesCache.find(l => l.user_id === emp.id && l.start_date <= date && l.end_date >= date);
         const branchInfo = emp.branches ? `${emp.branches.branch_id} | ${emp.branches.branch_name}` : '-';
         
-        const tIn = record ? new Date(record.check_in_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}).replace(/,/g, '') : '-';
-        const tOut = record?.check_out_time ? new Date(record.check_out_time).toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit', hour12: true}).replace(/,/g, '') : '-';
+        const tIn = record ? formatTime12(record.check_in_time).replace(/\u200E/g, '') : '-';
+        const tOut = record?.check_out_time ? formatTime12(record.check_out_time).replace(/\u200E/g, '') : '-';
         
         let statusText = "";
         if (employeeLeave) {
