@@ -146,22 +146,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
         });
 
-        // ڕێگری لە کۆپیکردن و کلیکی ڕاست (ContextMenu) لە هەموو لاپەڕەکاندا
-        document.addEventListener('copy', (e) => e.preventDefault());
-        
-        // ڕێگری لە کلیلە کورتکراوەکانی پشکنینی کۆد (F12, Ctrl+Shift+I, Ctrl+U)
-        document.addEventListener('keydown', (e) => {
-            if (e.keyCode === 123 || 
-                (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || 
-                (e.ctrlKey && e.keyCode === 85)) {
-                e.preventDefault();
-            }
-        });
-
-        document.addEventListener('contextmenu', (e) => {
-            // ڕێگە بدە تەنها لە ناو خانەکانی نووسین کلیکی ڕاست کار بکات
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
-        });
+        // // ڕێگری لە کۆپیکردن و کلیکی ڕاست (ContextMenu) لە هەموو لاپەڕەکاندا
+        // document.addEventListener('copy', (e) => e.preventDefault());
+        // 
+        // // ڕێگری لە کلیلە کورتکراوەکانی پشکنینی کۆد (F12, Ctrl+Shift+I, Ctrl+U)
+        // document.addEventListener('keydown', (e) => {
+        //     if (e.keyCode === 123 || 
+        //         (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || 
+        //         (e.ctrlKey && e.keyCode === 85)) {
+        //         e.preventDefault();
+        //     }
+        // });
+        // 
+        // document.addEventListener('contextmenu', (e) => {
+        //     // ڕێگە بدە تەنها لە ناو خانەکانی نووسین کلیکی ڕاست کار بکات
+        //     if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+        // });
     }
 });
 
