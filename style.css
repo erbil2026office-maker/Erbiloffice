@@ -1402,11 +1402,8 @@ min-height: 80px; /* Ensure consistent height for both items */
     font-weight: 700 !important;
     font-size: 0.85rem !important;
     background: var(--card-bg) !important;
-    color: var(--text-main) !important;
     border: 1px solid var(--border-color) !important;
     padding: 0 12px !important;
-    line-height: 48px !important; /* دڵنیایی دەدات کە دەقەکە لە مۆبایلدا لە ناوەڕاست دەبێت */
-    display: block !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
@@ -1422,11 +1419,9 @@ min-height: 80px; /* Ensure consistent height for both items */
     .date-range-container { gap: 8px; }
     .input-wrapper-labeled label { font-size: 0.65rem; }
     .input-wrapper-labeled .glass-input { 
-        height: 46px !important;
-        line-height: 46px !important; /* هاوتاکردنی لەگەڵ بەرزی دوگمەکە لە مۆبایل */
+        height: 46px !important; 
         font-size: 0.8rem !important;
-        padding: 0 10px !important;
-        text-align: center; /* باشترکردنی شێوازی دەرکەوتنی ڕێکەوت لە مۆبایل */
+        padding: 0 8px !important;
     }
     .sub-admin-panel .history-btn span,
     .save-leave-btn span {
