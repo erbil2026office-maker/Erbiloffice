@@ -1402,8 +1402,11 @@ min-height: 80px; /* Ensure consistent height for both items */
     font-weight: 700 !important;
     font-size: 0.85rem !important;
     background: var(--card-bg) !important;
+    color: var(--text-main) !important;
     border: 1px solid var(--border-color) !important;
     padding: 0 12px !important;
+    line-height: 48px !important;
+    display: block !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
@@ -1420,8 +1423,10 @@ min-height: 80px; /* Ensure consistent height for both items */
     .input-wrapper-labeled label { font-size: 0.65rem; }
     .input-wrapper-labeled .glass-input { 
         height: 46px !important; 
+        line-height: 46px !important;
         font-size: 0.8rem !important;
         padding: 0 8px !important;
+        text-align: center;
     }
     .sub-admin-panel .history-btn span,
     .save-leave-btn span {

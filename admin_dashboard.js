@@ -13,6 +13,8 @@ let selectedBranchInModal = null; // بۆ هەڵگرتنی بنکەی دیاری
 let selectedLeaveStartDate = null;
 let selectedLeaveEndDate = null;
 let selectedLeaveReasonInModal = null;
+let selectedLeaveStartTime = null;
+let selectedLeaveEndTime = null;
 let selectedRoleInModal = null; // بۆ هەڵگرتنی ڕۆڵی دیاریکراو لە مۆداڵ
 
 let currentFilters = {
@@ -640,6 +642,13 @@ async function openEmployeeSettings(userId) {
     const emp = staffCache.find(s => s.id === userId);
     if (!emp) return;
     selectedUserIdForReset = userId;
+    
+    // پاککردنەوەی زانیارییەکانی مۆڵەت پێش کردنەوەی مۆداڵ بۆ فەرمانبەرێکی نوێ
+    selectedLeaveStartDate = null;
+    selectedLeaveEndDate = null;
+    selectedLeaveReasonInModal = null;
+    selectedLeaveStartTime = null;
+    selectedLeaveEndTime = null;
 
     let modal = document.getElementById('empSettingsModal');
     if (!modal) {
@@ -676,17 +685,42 @@ async function openEmployeeSettings(userId) {
         </div>
     `).join('');
 
+    // ئامادەکردنی لیستی جۆرەکانی مۆڵەت بۆ ناو مۆداڵ
+    const leaveTypes = [
+        { key: 'hourlyLeave', text: translations[currentLang].hourlyLeave },
+        { key: 'regularLeave', text: translations[currentLang].regularLeave },
+        { key: 'sickLeave', text: translations[currentLang].sickLeave },
+        { key: 'maternityLeave', text: translations[currentLang].maternityLeave },
+        { key: 'longTermLeave', text: translations[currentLang].longTermLeave }
+    ];
+
+    const leaveOptionsHtml = leaveTypes.map(l => `
+        <div class="option" onclick="selectModalLeaveReason(event, '${l.key}', '${l.text}')">
+            ${l.text}
+        </div>
+    `).join('');
+
+    // وەرگێڕانەکان بۆ ناو تابەکان
+    const tabGeneralText = translations[currentLang].empSettings;
+    const tabLeaveText = translations[currentLang].leaveManagement;
+
     modal.innerHTML = `
-        <div class="modal-window compact-settings-modal" style="max-width:340px; padding:15px; border-radius:20px;">
+        <div class="modal-window compact-settings-modal" style="max-width:400px; padding:20px; border-radius:25px;">
             <div class="modal-header-compact">
                 <i class="fas fa-user-cog"></i>
                 <div>
-                    <h3 style="margin:0; font-size:1rem;">${translations[currentLang].empSettings}</h3>
+                    <h3 style="margin:0; font-size:1.1rem;">${translations[currentLang].empSettings}</h3>
                     <p style="margin:0; font-size:0.75rem; color:var(--text-sub);">${emp.full_name}</p>
                 </div>
             </div>
+
+            <div class="settings-tabs">
+                <button class="tab-btn active" onclick="switchSettingsTab(event, 'general-tab')"><i class="fas fa-id-card"></i> ${tabGeneralText}</button>
+                <button class="tab-btn" onclick="switchSettingsTab(event, 'leave-tab')"><i class="fas fa-plane-departure"></i> ${tabLeaveText}</button>
+            </div>
             
-            <div class="settings-grid">
+            <div id="general-tab" class="tab-pane active">
+                <div class="settings-grid">
                 <div class="settings-group">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <label class="settings-label" style="margin:0;"><i class="fas fa-map-marker-alt"></i> ${translations[currentLang].branchLabel}</label>
@@ -715,20 +749,134 @@ async function openEmployeeSettings(userId) {
                     </div>
                 </div>
 
-                <div class="settings-group reset-group" style="padding: 10px;">
+                <div class="settings-group reset-group" style="padding: 12px; margin-top:5px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div style="text-align:right;">
                             <span class="settings-label" style="margin:0;"><i class="fas fa-mobile-alt"></i> ${translations[currentLang].device}</span>
-                            <span style="font-size:0.65rem; color:${emp.device_id ? '#ef4444' : 'var(--text-sub)'}">${emp.device_id ? 'Linked to device' : 'Not Linked to device'}</span>
+                            <span style="font-size:0.65rem; color:${emp.device_id ? '#ef4444' : 'var(--text-sub)'}">${emp.device_id ? 'Linked' : 'Not Linked'}</span>
                         </div>
-                        <button class="mini-btn btn-danger-modern" style="width:auto; padding:0 12px; height:28px; font-size:0.7rem;" onclick="resetDeviceID()"><i class="fas fa-redo"></i> Reset</button>
+                        <button class="mini-btn btn-danger-modern" style="width:auto; padding:0 12px; height:32px; font-size:0.75rem;" onclick="resetDeviceID()"><i class="fas fa-redo"></i> Reset</button>
+                    </div>
+                </div>
+                </div>
+            </div>
+
+            <div id="leave-tab" class="tab-pane">
+                <div class="settings-group" style="background: rgba(var(--primary-rgb), 0.03); border: 1px dashed var(--primary); margin-top:0;">
+                    <label class="settings-label" style="margin-bottom:10px;"><i class="fas fa-plane-departure"></i> ${translations[currentLang].leaveManagement}</label>
+                    
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <input type="date" class="glass-input mini-trigger" onchange="selectedLeaveStartDate=this.value" style="flex:1; font-size:0.7rem;">
+                        <input type="date" class="glass-input mini-trigger" onchange="selectedLeaveEndDate=this.value" style="flex:1; font-size:0.7rem;">
+                    </div>
+                    
+                    <div id="modalHourlyTimeInputs" style="display:none; gap:8px; margin-bottom:8px;">
+                        <input type="time" class="glass-input mini-trigger" onchange="selectedLeaveStartTime=this.value" style="flex:1; font-size:0.7rem;">
+                        <input type="time" class="glass-input mini-trigger" onchange="selectedLeaveEndTime=this.value" style="flex:1; font-size:0.7rem;">
+                    </div>
+
+                    <div class="custom-select" id="modalLeaveSelect" onclick="toggleCustomDropdown(event, 'modalLeaveSelect')" style="margin-bottom:10px;">
+                        <div class="select-trigger mini-trigger">
+                            <span class="selected-text" style="font-size:0.75rem;">${translations[currentLang].selectLeaveReason}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="options-list">${leaveOptionsHtml}</div>
+                    </div>
+
+                    <button class="settings-save-btn" onclick="saveModalLeave('${userId}')" style="margin-top:0; height:36px; background:var(--primary);">
+                        <i class="fas fa-save"></i> ${translations[currentLang].saveLeave}
+                    </button>
+                </div>
+
+                <div class="active-leaves-list" style="margin-top:15px; border-top:1px dashed var(--border-color); padding-top:15px;">
+                    <label class="settings-label" style="margin-bottom:10px;"><i class="fas fa-history"></i> ${translations[currentLang].leaveStatus}</label>
+                    <div id="leavesItemsContainer" style="max-height:180px; overflow-y:auto; padding:2px;">
+                        <div class="loading-state" style="padding:10px;"><i class="fas fa-spinner fa-spin"></i></div>
                     </div>
                 </div>
             </div>
+
             <button class="modal-close-link mini-close" onclick="document.getElementById('empSettingsModal').style.display='none'"><i class="fas fa-times"></i> ${translations[currentLang].close}</button>
         </div>
     `;
     modal.style.display = 'flex';
+}
+
+function switchSettingsTab(event, tabId) {
+    if (event) event.stopPropagation();
+    
+    // لابردنی ئاکتیڤ لە هەموو تابەکان
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+    
+    // چالاککردنی تابی دیاریکراو
+    event.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+
+    // ئەگەر تابی مۆڵەت کرایەوە، مۆڵەتەکان بار بکە
+    if (tabId === 'leave-tab') {
+        loadEmployeeLeaves(selectedUserIdForReset);
+    }
+}
+
+async function loadEmployeeLeaves(userId) {
+    const container = document.getElementById('leavesItemsContainer');
+    if (!container) return;
+    
+    // وەرگرتنی ڕێکەوتی ئەمڕۆ بە فۆرماتی "YYYY-MM-DD"
+    const today = new Date();
+    const todayFormatted = today.toISOString().split('T')[0];
+
+    // فلتەرکردنی مۆڵەتەکان بۆ نیشاندانی تەنها چالاکەکان
+    const { data, error } = await adminClient
+        .from('leaves')
+        .select('*')
+        .eq('user_id', userId)
+        .lte('start_date', todayFormatted) // ڕێکەوتی دەستپێک دەبێت لە ئەمڕۆ یان پێشتر بێت
+        .gte('end_date', todayFormatted)   // ڕێکەوتی کۆتایی دەبێت لە ئەمڕۆ یان دواتر بێت
+        .order('start_date', { ascending: false }); 
+    if (error) {
+        container.innerHTML = `<div style="color:var(--status-absent); font-size:0.7rem;">Error loading data</div>`;
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        container.innerHTML = `<div style="font-size:0.75rem; color:var(--text-sub); text-align:center; padding:15px;">${translations[currentLang].noLeaveRecorded}</div>`;
+        return;
+    }
+
+    container.innerHTML = data.map(leave => {
+        const leaveText = translations[currentLang][leave.reason] || leave.reason;
+        const timeRange = leave.start_time ? `<br><small style="color:var(--primary);">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : '';
+        
+        return `
+            <div class="modal-leave-item">
+                <div style="text-align:right;">
+                    <div style="font-size:0.8rem; font-weight:700; color:var(--text-main);">${leaveText}</div>
+                    <div style="font-size:0.65rem; color:var(--text-sub);">${leave.start_date} ${translations[currentLang].to} ${leave.end_date} ${timeRange}</div>
+                </div>
+                <button class="mini-btn btn-danger-modern" style="width:32px; height:32px; margin:0; border-radius:10px;" onclick="deleteModalLeave('${leave.id}', '${userId}')">
+                    <i class="fas fa-trash-alt" style="font-size:0.75rem;"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+async function deleteModalLeave(leaveId, userId) {
+    if (!confirm(translations[currentLang].confirmDeleteLeave)) return;
+
+    const { error } = await adminClient
+        .from('leaves')
+        .delete()
+        .eq('id', leaveId);
+
+    if (!error) {
+        loadEmployeeLeaves(userId); // نوێکردنەوەی لیستەکە لە ناو مۆداڵ
+        loadAttendanceData();       // نوێکردنەوەی ئامارەکان لە داشبۆردی سەرەکی
+    } else {
+        alert("Error deleting: " + error.message);
+    }
 }
 
 function selectModalBranch(event, branchId, branchName) {
@@ -742,6 +890,64 @@ function selectModalBranch(event, branchId, branchName) {
         opt.classList.toggle('selected', opt.innerText.includes(branchName));
     });
     document.getElementById('modalBranchSelect').classList.remove('active'); // داخستنی لیستەکە دوای هەڵبژاردن
+}
+
+function selectModalLeaveReason(event, key, text) {
+    if (event) event.stopPropagation();
+    selectedLeaveReasonInModal = key;
+    const triggerText = document.querySelector('#modalLeaveSelect .selected-text');
+    if (triggerText) triggerText.innerText = text;
+    
+    const timeInputs = document.getElementById('modalHourlyTimeInputs');
+    if (timeInputs) timeInputs.style.display = (key === 'hourlyLeave') ? 'flex' : 'none';
+    
+    document.getElementById('modalLeaveSelect').classList.remove('active');
+}
+
+async function saveModalLeave(userId) {
+    if (!selectedLeaveStartDate || !selectedLeaveEndDate || !selectedLeaveReasonInModal) {
+        alert(translations[currentLang].selectDates);
+        return;
+    }
+
+    // پشکنینی وورد بۆ ڕێگری لە تێکەڵبوونی ڕێکەوتی مۆڵەتەکان (Overlap Detection)
+    // ئەم لۆجیکە ڕێگری دەکات لەوەی فەرمانبەر لە یەک کاتدا یان لە یەک ڕۆژدا دوو مۆڵەتی هەبێت
+    const isOverlapping = leavesCache.some(l => {
+        return l.user_id === userId && 
+               selectedLeaveStartDate <= l.end_date && 
+               selectedLeaveEndDate >= l.start_date;
+    });
+
+    if (isOverlapping) {
+        const errorMsg = currentLang === 'ku' 
+            ? "هەڵە: ئەم فەرمانبەرە لەم مەودای ڕێکەوتەدا مۆڵەتی بۆ تۆمار کراوە. ناتوانرێت دوو مۆڵەت بۆ هەمان ڕۆژ تۆمار بکرێت." 
+            : "خطأ: هذا الموظف لديه إجازة مسجلة في هذا النطاق الزمني. لا يمكن تسجيل إجازتين لنفس اليوم.";
+        alert(errorMsg);
+        return;
+    }
+
+    const leaveData = {
+        user_id: userId,
+        start_date: selectedLeaveStartDate,
+        end_date: selectedLeaveEndDate,
+        reason: selectedLeaveReasonInModal
+    };
+
+    if (selectedLeaveReasonInModal === 'hourlyLeave') {
+        leaveData.start_time = selectedLeaveStartTime;
+        leaveData.end_time = selectedLeaveEndTime;
+    }
+
+    if (confirm(translations[currentLang].confirmSaveLeave)) {
+        const { error } = await adminClient.from('leaves').insert([leaveData]);
+        if (!error) {
+            alert(translations[currentLang].leaveSavedSuccess);
+            loadEmployeeLeaves(userId); // لیستەکە نوێ بکەرەوە دوای سەیڤکردن
+            loadAttendanceData();
+        } else {
+            alert(error.code === '23505' ? "ئەم فەرمانبەرە پێشتر مۆڵەتی بۆ ئەم ڕێکەوتە تۆمار کراوە" : "Error: " + error.message);
+        }
+    }
 }
 
 async function updateEmployeeBranch(userId) {
