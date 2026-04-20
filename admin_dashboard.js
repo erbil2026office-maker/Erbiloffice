@@ -702,14 +702,15 @@ async function openEmployeeSettings(userId) {
 
     // وەرگێڕانەکان بۆ ناو تابەکان
     const tabGeneralText = translations[currentLang].empSettings;
-    const tabLeaveText = translations[currentLang].leaveManagement;
+    const tabLeaveText = translations[currentLang].leaveManagementt;
+    const tabCheckoutText = translations[currentLang].manualCheckoutTab;
 
     modal.innerHTML = `
         <div class="modal-window compact-settings-modal" style="max-width:400px; padding:20px; border-radius:25px;">
             <div class="modal-header-compact">
                 <i class="fas fa-user-cog"></i>
                 <div>
-                    <h3 style="margin:0; font-size:1.1rem;">${translations[currentLang].empSettings}</h3>
+                    <h3 style="margin:0; font-size:1.1rem;">${translations[currentLang].emppSettings}</h3>
                     <p style="margin:0; font-size:0.75rem; color:var(--text-sub);">${emp.full_name}</p>
                 </div>
             </div>
@@ -717,6 +718,7 @@ async function openEmployeeSettings(userId) {
             <div class="settings-tabs">
                 <button class="tab-btn active" onclick="switchSettingsTab(event, 'general-tab')"><i class="fas fa-id-card"></i> ${tabGeneralText}</button>
                 <button class="tab-btn" onclick="switchSettingsTab(event, 'leave-tab')"><i class="fas fa-plane-departure"></i> ${tabLeaveText}</button>
+                <button class="tab-btn" onclick="switchSettingsTab(event, 'checkout-tab')"><i class="fas fa-sign-out-alt"></i> ${tabCheckoutText}</button>
             </div>
             
             <div id="general-tab" class="tab-pane active">
@@ -746,16 +748,6 @@ async function openEmployeeSettings(userId) {
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="options-list">${roleOptionsHtml}</div>
-                    </div>
-                </div>
-
-                <div class="settings-group reset-group" style="padding: 12px; margin-top:5px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="text-align:right;">
-                            <span class="settings-label" style="margin:0;"><i class="fas fa-mobile-alt"></i> ${translations[currentLang].device}</span>
-                            <span style="font-size:0.65rem; color:${emp.device_id ? '#ef4444' : 'var(--text-sub)'}">${emp.device_id ? 'Linked' : 'Not Linked'}</span>
-                        </div>
-                        <button class="mini-btn btn-danger-modern" style="width:auto; padding:0 12px; height:32px; font-size:0.75rem;" onclick="resetDeviceID()"><i class="fas fa-redo"></i> Reset</button>
                     </div>
                 </div>
                 </div>
@@ -792,6 +784,18 @@ async function openEmployeeSettings(userId) {
                     <label class="settings-label" style="margin-bottom:10px;"><i class="fas fa-history"></i> ${translations[currentLang].leaveStatus}</label>
                     <div id="leavesItemsContainer" style="max-height:180px; overflow-y:auto; padding:2px;">
                         <div class="loading-state" style="padding:10px;"><i class="fas fa-spinner fa-spin"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="checkout-tab" class="tab-pane">
+                <div class="settings-group reset-group" style="padding: 12px; margin-top: 0;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="text-align:right;">
+                            <span class="settings-label" style="margin:0;"><i class="fas fa-mobile-alt"></i> ${translations[currentLang].device}</span>
+                            <span style="font-size:0.65rem; color:${emp.device_id ? '#ef4444' : 'var(--text-sub)'}">${emp.device_id ? 'Linked' : 'Not Linked'}</span>
+                        </div>
+                        <button class="mini-btn btn-danger-modern" style="width:auto; padding:0 12px; height:32px; font-size:0.75rem;" onclick="resetDeviceID()"><i class="fas fa-redo"></i> Reset</button>
                     </div>
                 </div>
             </div>
