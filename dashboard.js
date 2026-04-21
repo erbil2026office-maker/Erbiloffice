@@ -1064,7 +1064,7 @@ async function viewSelectedStaffAttendance(clickedBtn) {
     
     const { data: leaves } = await client
         .from('leaves')
-        .select('start_date, end_date, reason, start_time, end_time')
+        .select('id, start_date, end_date, reason, start_time, end_time')
         .eq('user_id', selectedStaffId);
 
     btn.innerHTML = originalHTML;
@@ -1145,7 +1145,7 @@ async function showStaffDayDetails(record, dateStr, staffId) {
                         ${leave.start_time ? `<br><small style="color:var(--text-sub);">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : ''}
                     </div>
                 </div>
-                <button class="btn-delete" onclick="deleteStaffLeave('${staffId}', '${leave.start_date}')" style="width: 32px !important; height: 32px !important; border-radius: 8px !important; margin: 0 !important;">
+                <button class="btn-delete" onclick="deleteStaffLeave('${leave.id}', '${staffId}')" style="width: 32px !important; height: 32px !important; border-radius: 8px !important; margin: 0 !important;">
                     <i class="fas fa-trash-alt" style="font-size: 0.75rem;"></i>
                 </button>
             </div>
@@ -1231,19 +1231,19 @@ async function saveStaffLeave() {
     }
 }
 
-async function deleteStaffLeave(staffId, startDate) {
+async function deleteStaffLeave(leaveId, staffId) {
     if (!confirm(translations[currentLang].confirmDeleteLeave)) return;
     
     const { error } = await client
         .from('leaves')
         .delete()
-        .eq('user_id', staffId)
-        .eq('start_date', startDate);
+        .eq('id', leaveId);
 
     if (!error) {
         alert(translations[currentLang].leaveDeletedSuccess);
         if (staffDetailModal) staffDetailModal.style.display = 'none';
-        // دووبارە بارکردنەوەی داتاکان بۆ نوێکردنەوەی کالێندەرەکە
+        // نوێکردنەوەی داتاکان بە دیاریکردنی ئایدی فەرمانبەرەکە بۆ ئەوەی گۆڕانکارییەکە یەکسەر دەربکەوێت
+        selectedStaffId = staffId;
         viewSelectedStaffAttendance(); 
     } else {
         alert("Error: " + error.message);

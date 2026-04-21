@@ -754,36 +754,37 @@ async function openEmployeeSettings(userId) {
             </div>
 
             <div id="leave-tab" class="tab-pane">
-                <div class="settings-group" style="background: rgba(var(--primary-rgb), 0.03); border: 1px dashed var(--primary); margin-top:0;">
-                    <label class="settings-label" style="margin-bottom:10px;"><i class="fas fa-plane-departure"></i> ${translations[currentLang].leaveManagement}</label>
+                <div id="leaveRegistrationSection" class="settings-group" style="background: rgba(var(--primary-rgb), 0.03); border: 1px dashed var(--primary); margin-top:0; padding: 10px;">
+                    <label class="settings-label" style="margin-bottom:8px; font-size:0.6rem;"><i class="fas fa-plane-departure"></i> ${translations[currentLang].leaveManagement}</label>
                     
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <input type="date" class="glass-input mini-trigger" onchange="selectedLeaveStartDate=this.value" style="flex:1; font-size:0.7rem;">
-                        <input type="date" class="glass-input mini-trigger" onchange="selectedLeaveEndDate=this.value" style="flex:1; font-size:0.7rem;">
+                    <div style="display:flex; gap:6px; margin-bottom:6px;">
+                        <input type="date" class="glass-input mini-trigger" onchange="selectedLeaveStartDate=this.value" style="flex:1; font-size:0.65rem; height:32px !important; padding: 0 8px;">
+                        <input type="date" class="glass-input mini-trigger" onchange="selectedLeaveEndDate=this.value" style="flex:1; font-size:0.65rem; height:32px !important; padding: 0 8px;">
                     </div>
                     
-                    <div id="modalHourlyTimeInputs" style="display:none; gap:8px; margin-bottom:8px;">
-                        <input type="time" class="glass-input mini-trigger" onchange="selectedLeaveStartTime=this.value" style="flex:1; font-size:0.7rem;">
-                        <input type="time" class="glass-input mini-trigger" onchange="selectedLeaveEndTime=this.value" style="flex:1; font-size:0.7rem;">
+                     <div id="modalHourlyTimeInputs" style="display:none; gap:6px; margin-bottom:6px;">
+                        <input type="time" class="glass-input mini-trigger" onchange="selectedLeaveStartTime=this.value" style="flex:1; font-size:0.65rem; height:32px !important; padding: 0 8px;">
+                        <input type="time" class="glass-input mini-trigger" onchange="selectedLeaveEndTime=this.value" style="flex:1; font-size:0.65rem; height:32px !important; padding: 0 8px;">
                     </div>
 
-                    <div class="custom-select" id="modalLeaveSelect" onclick="toggleCustomDropdown(event, 'modalLeaveSelect')" style="margin-bottom:10px;">
-                        <div class="select-trigger mini-trigger">
-                            <span class="selected-text" style="font-size:0.75rem;">${translations[currentLang].selectLeaveReason}</span>
-                            <i class="fas fa-chevron-down"></i>
+                    <div style="display:flex; gap:6px; align-items: stretch;">
+                        <div class="custom-select" id="modalLeaveSelect" onclick="toggleCustomDropdown(event, 'modalLeaveSelect')" style="flex: 2;">
+                            <div class="select-trigger mini-trigger" style="height:32px !important; font-size:0.7rem;">
+                                <span class="selected-text" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${translations[currentLang].selectLeaveReason}</span>
+                                <i class="fas fa-chevron-down" style="font-size:0.6rem;"></i>
+                            </div>
+                            <div class="options-list">${leaveOptionsHtml}</div>
                         </div>
-                        <div class="options-list">${leaveOptionsHtml}</div>
+                        <button class="settings-save-btn" onclick="saveModalLeave('${userId}')" style="flex: 1; margin-top:0; height:32px; background:var(--primary); font-size:0.7rem; border-radius:10px;">
+                            <i class="fas fa-check"></i> ${translations[currentLang].saveLeave}
+                        </button>
                     </div>
-
-                    <button class="settings-save-btn" onclick="saveModalLeave('${userId}')" style="margin-top:0; height:36px; background:var(--primary);">
-                        <i class="fas fa-save"></i> ${translations[currentLang].saveLeave}
-                    </button>
                 </div>
 
                 <div class="active-leaves-list" style="margin-top:15px; border-top:1px dashed var(--border-color); padding-top:15px;">
                     <label class="settings-label" style="margin-bottom:10px;"><i class="fas fa-history"></i> ${translations[currentLang].leaveStatus}</label>
-                    <div id="leavesItemsContainer" style="max-height:180px; overflow-y:auto; padding:2px;">
-                        <div class="loading-state" style="padding:10px;"><i class="fas fa-spinner fa-spin"></i></div>
+                    <div id="leavesItemsContainer" style="padding:2px;">
+                        <div class="loading-state" style="padding:10px;"><i class="fas fa-circle-notch fa-spin"></i></div>
                     </div>
                 </div>
             </div>
@@ -823,21 +824,17 @@ function switchSettingsTab(event, tabId) {
     }
 }
 
-async function loadEmployeeLeaves(userId) {
+async function loadEmployeeLeaves(userId, showAll = false) {
     const container = document.getElementById('leavesItemsContainer');
-    if (!container) return;
-    
-    // وەرگرتنی ڕێکەوتی ئەمڕۆ بە فۆرماتی "YYYY-MM-DD"
-    const today = new Date();
-    const todayFormatted = today.toISOString().split('T')[0];
+    const regSection = document.getElementById('leaveRegistrationSection');
+    if (!container || !regSection) return;
 
-    // فلتەرکردنی مۆڵەتەکان بۆ نیشاندانی تەنها چالاکەکان
+    // هێنانی هەموو مۆڵەتەکانی ئەم فەرمانبەرە بۆ ئەوەی ئادمین بتوانێت بەڕێوەیان ببات
+    // لابردنی فلتەری ڕێکەوتی ئەمڕۆ چونکە ڕێگری دەکرد لە بینینی مۆڵەتەکانی داهاتوو یان ڕابردوو
     const { data, error } = await adminClient
         .from('leaves')
         .select('*')
         .eq('user_id', userId)
-        .lte('start_date', todayFormatted) // ڕێکەوتی دەستپێک دەبێت لە ئەمڕۆ یان پێشتر بێت
-        .gte('end_date', todayFormatted)   // ڕێکەوتی کۆتایی دەبێت لە ئەمڕۆ یان دواتر بێت
         .order('start_date', { ascending: false }); 
     if (error) {
         container.innerHTML = `<div style="color:var(--status-absent); font-size:0.7rem;">Error loading data</div>`;
@@ -849,22 +846,52 @@ async function loadEmployeeLeaves(userId) {
         return;
     }
 
-    container.innerHTML = data.map(leave => {
+    // ئەگەر نیشاندانی هەمووی هەڵبژێردرا، بەشی تۆمارکردن بشارەوە
+    regSection.style.display = showAll ? 'none' : 'block';
+
+    // ئەگەر نیشاندانی هەمووی نەبوو، تەنها نوێترین پشان بدە
+    const displayData = showAll ? data : [data[0]];
+
+    let leavesListHtml = displayData.map(leave => {
         const leaveText = translations[currentLang][leave.reason] || leave.reason;
-        const timeRange = leave.start_time ? `<br><small style="color:var(--primary);">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : '';
+        // کورتکردنەوەی کاتی مۆڵەتی کاتی بۆ یەك هێڵ و لادانی سپەیسە زیادەکان بۆ کۆمپاکتکردن
+        const timeRange = leave.start_time ? ` <small style="color:var(--primary); font-weight:normal; font-size:0.6rem;">(${formatTime12(leave.start_time).replace(/\s/g,'')}-${formatTime12(leave.end_time).replace(/\s/g,'')})</small>` : '';
+        const dateRangeText = leave.start_date === leave.end_date ? leave.start_date : `${leave.start_date} ← ${leave.end_date}`;
         
         return `
-            <div class="modal-leave-item">
-                <div style="text-align:right;">
-                    <div style="font-size:0.8rem; font-weight:700; color:var(--text-main);">${leaveText}</div>
-                    <div style="font-size:0.65rem; color:var(--text-sub);">${leave.start_date} ${translations[currentLang].to} ${leave.end_date} ${timeRange}</div>
+            <div class="modal-leave-item" style="padding: 8px 12px; margin-bottom: 6px; border-radius: 12px; background: var(--bg-color); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+                <div style="text-align:right; flex: 1; min-width: 0; padding-left: 10px;">
+                    <div style="font-size:0.78rem; font-weight:700; color:var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;">
+                        ${leaveText} ${timeRange}
+                    </div>
+                    <div style="font-size:0.65rem; color:var(--text-sub); font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px;">${dateRangeText}</div>
                 </div>
-                <button class="mini-btn btn-danger-modern" style="width:32px; height:32px; margin:0; border-radius:10px;" onclick="deleteModalLeave('${leave.id}', '${userId}')">
-                    <i class="fas fa-trash-alt" style="font-size:0.75rem;"></i>
+                <button class="mini-btn" style="width:28px; height:28px; min-width:28px; margin:0; border-radius:8px; background: rgba(239, 68, 68, 0.08); color: #ef4444; border: none; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onclick="deleteModalLeave('${leave.id}', '${userId}')">
+                    <i class="fas fa-trash-alt" style="font-size:0.6rem;"></i>
                 </button>
             </div>
         `;
     }).join('');
+
+    if (!showAll && data.length > 1) {
+        const viewAllText = currentLang === 'ku' ? "بینینی هەمووی" : "عرض الكل";
+        leavesListHtml += `
+            <button class="mini-action-link" style="width:100%; margin-top:10px; padding: 8px; border: 1px dashed var(--border-color); border-radius: 10px; text-decoration: none; color: var(--primary); display: block;" onclick="loadEmployeeLeaves('${userId}', true)">
+                <i class="fas fa-layer-group"></i> ${viewAllText} (${data.length})
+            </button>`;
+    } else if (showAll) {
+        const backText = currentLang === 'ku' ? "تۆمارکردنی نوێ" : "تسجيل جديد";
+        leavesListHtml = `
+            <button class="mini-action-link" style="width:100%; margin-bottom:12px; text-align:right; display:block; text-decoration:none; color:var(--text-sub); font-size:0.7rem;" onclick="loadEmployeeLeaves('${userId}', false)">
+                <i class="fas fa-chevron-right"></i> ${backText}
+            </button>
+            <div style="max-height: 195px; overflow-y: auto; padding-left: 4px; padding-right: 2px;">
+                ${leavesListHtml}
+            </div>
+        `;
+    }
+
+    container.innerHTML = leavesListHtml;
 }
 
 async function deleteModalLeave(leaveId, userId) {
