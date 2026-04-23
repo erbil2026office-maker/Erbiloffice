@@ -883,6 +883,8 @@ async function initSubAdminPanel() {
                     </div>
                     <div class="options-list">
                         <div class="option" onclick="selectSubLeaveReason(event, 'hourlyLeave', '${translations[currentLang].hourlyLeave}')">${translations[currentLang].hourlyLeave}</div>
+                        <div class="option" onclick="selectSubLeaveReason(event, 'mobileTeam', '${translations[currentLang].mobileTeam}')">${translations[currentLang].mobileTeam}</div>
+                        <div class="option" onclick="selectSubLeaveReason(event, 'workshop', '${translations[currentLang].workshop}')">${translations[currentLang].workshop}</div>
                         <div class="option" onclick="selectSubLeaveReason(event, 'regularLeave', '${translations[currentLang].regularLeave}')">${translations[currentLang].regularLeave}</div>
                         <div class="option" onclick="selectSubLeaveReason(event, 'sickLeave', '${translations[currentLang].sickLeave}')">${translations[currentLang].sickLeave}</div>
                         <div class="option" onclick="selectSubLeaveReason(event, 'maternityLeave', '${translations[currentLang].maternityLeave}')">${translations[currentLang].maternityLeave}</div>
@@ -955,7 +957,7 @@ function selectSubLeaveReason(event, key, text) {
     
     // نیشاندانی کاتژمێرەکان تەنها ئەگەر مۆڵەتی کاتی بێت
     const timeInputs = document.getElementById('hourlyTimeInputs');
-    if (timeInputs) timeInputs.style.display = (key === 'hourlyLeave') ? 'flex' : 'none';
+    if (timeInputs) timeInputs.style.display = (key === 'hourlyLeave' || key === 'mobileTeam') ? 'flex' : 'none';
     
     drop.querySelectorAll('.option').forEach(opt => opt.classList.toggle('selected', opt.innerText === text));
     drop.classList.remove('active');
@@ -1136,10 +1138,23 @@ async function showStaffDayDetails(record, dateStr, staffId) {
 
     // ٢. پشکنین بۆ مۆڵەت (Leave) - هەردووکیان پێکەوە نیشان دەدات ئەگەر هەبوو
     if (isOnLeave) {
+        let leaveColor = "#ffc107";
+        let leaveBg = "rgba(255, 193, 7, 0.05)";
+        let leaveIcon = "fas fa-plane-departure";
+        
+        if (leave.reason === 'mobileTeam') {
+            leaveColor = "#14b8a6";
+            leaveBg = "rgba(20, 184, 166, 0.05)";
+            leaveIcon = "fas fa-car-side";
+        } else if (leave.reason === 'workshop') {
+             leaveColor = "#6366f1";
+            leaveBg = "rgba(99, 102, 241, 0.05)";
+            leaveIcon = "fas fa-tools";
+        }
         detailsHtml += `
-            <div class="detail-text" style="border-right: 4px solid #ffc107; background: rgba(255, 193, 7, 0.05); justify-content: space-between;">
+            <div class="detail-text" style="border-right: 4px solid ${leaveColor}; background: ${leaveBg}; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <i class="fas fa-plane-departure" style="color: #ffc107;"></i> 
+                     <i class="${leaveIcon}" style="color: ${leaveColor};"></i>  
                     <div>
                         ${translations[currentLang].reasonForLeave}: <b>${translations[currentLang][leave.reason] || leave.reason}</b>
                         ${leave.start_time ? `<br><small style="color:var(--text-sub);">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : ''}
@@ -1213,7 +1228,7 @@ async function saveStaffLeave() {
         reason: selectedLeaveReason
     };
 
-    if (selectedLeaveReason === 'hourlyLeave') {
+    if (selectedLeaveReason === 'hourlyLeave' || selectedLeaveReason === 'mobileTeam') {
         leaveData.start_time = selectedLeaveStartTime;
         leaveData.end_time = selectedLeaveEndTime;
     }
@@ -1395,7 +1410,7 @@ function showDayDetails(record, dateStr) {
     if (isOnLeave) {
         const leaveHtmlContent = `
             <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                <i class="fas fa-plane-departure" style="color: #ffc107;"></i> 
+                <i class="${leaveIcon}" style="color: ${leaveColor};"></i> 
                 <div>
                     ${translations[currentLang].reasonForLeave}: <b>${translations[currentLang][leave.reason] || leave.reason}</b>
                     ${leave.start_time ? `<br><small style="opacity:0.7;">${formatTime12(leave.start_time)} - ${formatTime12(leave.end_time)}</small>` : ''}
@@ -1404,8 +1419,8 @@ function showDayDetails(record, dateStr) {
 
         if (!record) {
             detailIn.style.display = 'flex';
-            detailIn.style.borderRight = "4px solid #ffc107";
-            detailIn.style.background = "rgba(255, 193, 7, 0.05)";
+            detailIn.style.borderRight = `4px solid ${leaveColor}`;
+            detailIn.style.background = leaveBg;
             detailIn.innerHTML = leaveHtmlContent;
         } else {
             // ئەگەر هاتن و دەرچوون و مۆڵەت پێکەوە هەبوون (مۆڵەتی کاتی)
@@ -1421,7 +1436,7 @@ function showDayDetails(record, dateStr) {
                 <div class="detail-text" style="border-right: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05); margin: 0 !important; display: flex; align-items: center; gap: 12px;">
                     ${checkoutHtml}
                 </div>
-                <div class="detail-text" style="border-right: 4px solid #ffc107; background: rgba(255, 193, 7, 0.05); margin: 0 !important; display: flex; align-items: center; gap: 12px;">
+                <div class="detail-text" style="border-right: 4px solid ${leaveColor}; background: ${leaveBg}; margin: 0 !important; display: flex; align-items: center; gap: 12px;">
                     ${leaveHtmlContent}
                 </div>
             `;

@@ -642,6 +642,24 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     border-right: 4px solid #ffc107; /* هێڵێکی زەردی تۆخ بۆ لای ڕاست */
 }
 
+.attendance-item.mobile-team-row {
+    background: rgba(20, 184, 166, 0.05); /* Teal light bg */
+    border-right: 4px solid #14b8a6;
+}
+
+.attendance-item.mobile-team-row:hover {
+    background: rgba(20, 184, 166, 0.09);
+}
+
+.attendance-item.workshop-row {
+    background: rgba(99, 102, 241, 0.05); /* Indigo light bg */
+    border-right: 4px solid #6366f1;
+}
+
+.attendance-item.workshop-row:hover {
+    background: rgba(99, 102, 241, 0.09);
+}
+
 .attendance-item.on-leave-row:hover {
     background: rgba(255, 193, 7, 0.09); /* تۆختر بوون لە کاتی هۆڤەر */
     border-bottom-color: #ffc107;
@@ -732,6 +750,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .badge-early { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
 .badge-warn { background: rgba(234, 179, 8, 0.1); color: #ca8a04; }
 .badge-orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.badge-mobile-team { background: rgba(20, 184, 166, 0.1); color: #14b8a6; }
+.badge-workshop { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
 .badge-leave { background: rgba(255, 193, 7, 0.1); color: #ffc107; } /* ڕەنگی زەرد بۆ مۆڵەت */
 .badge-blue { background: rgba(0, 98, 255, 0.1); color: var(--primary); }
 .badge-danger { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
@@ -1262,6 +1282,8 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .status-present { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
 .status-absent { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
 .status-leave { background: rgba(255, 193, 7, 0.1); color: #ffc107; } /* ڕەنگی زەرد بۆ مۆڵەت */
+.status-mobile-team { background: rgba(20, 184, 166, 0.1); color: #14b8a6; }
+.status-workshop { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
 
 .loading-state {
     padding: 50px;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ihec-inout-v1.4.03';
+const CACHE_NAME = 'ihec-inout-v1.4.04';
 const ASSETS = [
   '/',
   '/index.html',

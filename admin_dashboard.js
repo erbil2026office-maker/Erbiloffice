@@ -285,7 +285,9 @@ function renderLeaveTypeCheckboxes() {
         { key: 'maternityLeave', text: translations[currentLang].maternityLeave },
         { key: 'longTermLeave', text: translations[currentLang].longTermLeave },
         { key: 'regularLeave', text: translations[currentLang].regularLeave },
-        { key: 'hourlyLeave', text: translations[currentLang].hourlyLeave }
+        { key: 'hourlyLeave', text: translations[currentLang].hourlyLeave },
+        { key: 'mobileTeam', text: translations[currentLang].mobileTeam },
+        { key: 'workshop', text: translations[currentLang].workshop }
     ];
 
     types.forEach(t => {
@@ -512,8 +514,16 @@ function renderAttendance(attendance, employees) {
             const hasJustification = !!just;
             
             if (isOnLeave) {
-                row.classList.add('on-leave-row');
-                employeeClassifications.push({ label: `${translations[currentLang].reasonForLeave}: ${leaveTypeText}`, class: 'badge-leave', icon: 'fas fa-plane-departure' });
+                if (employeeLeave.reason === 'mobileTeam') {
+                    row.classList.add('mobile-team-row');
+                    employeeClassifications.push({ label: `${translations[currentLang].reasonForLeave}: ${leaveTypeText}`, class: 'badge-mobile-team', icon: 'fas fa-car-side' });
+                } else if (employeeLeave.reason === 'workshop') {
+                    row.classList.add('workshop-row');
+                    employeeClassifications.push({ label: `${translations[currentLang].reasonForLeave}: ${leaveTypeText}`, class: 'badge-workshop', icon: 'fas fa-tools' });
+                } else {
+                    row.classList.add('on-leave-row');
+                    employeeClassifications.push({ label: `${translations[currentLang].reasonForLeave}: ${leaveTypeText}`, class: 'badge-leave', icon: 'fas fa-plane-departure' });
+                }
             }
 
             if (record) { // ئەگەر چێک-ئینی کردبوو
@@ -566,17 +576,19 @@ function renderAttendance(attendance, employees) {
             // دیاریکردنی تایتڵی ستوونی دۆخ بە شێوەیەکی وورد
             let statusLabel = "";
             if (isOnLeave) {
-                if (employeeLeave.reason === 'hourlyLeave') {
-                    const timeRange = `${formatTime12(employeeLeave.start_time)} - ${formatTime12(employeeLeave.end_time)}`;
-                    const hourlyBadge = `<span class="status-pill status-leave" style="cursor:pointer;" onclick="alert('${leaveTypeText}: ${timeRange}')" title="${timeRange}">${leaveTypeText}</span>`;
-                    
-                    if (record) {
-                        statusLabel = `${hourlyBadge} <span style="font-weight:800; color:var(--text-sub); font-size:0.7rem;">+</span> <span class="status-pill status-present">${translations[currentLang].statusPresent}</span>`;
-                    } else {
-                        statusLabel = hourlyBadge;
-                    }
+                let statusClass = "status-leave";
+                if (employeeLeave.reason === 'mobileTeam') statusClass = "status-mobile-team";
+                else if (employeeLeave.reason === 'workshop') statusClass = "status-workshop";
+
+                const timeRange = (employeeLeave.reason === 'hourlyLeave' || employeeLeave.reason === 'mobileTeam') 
+                    ? ` (${formatTime12(employeeLeave.start_time)} - ${formatTime12(employeeLeave.end_time)})` 
+                    : "";
+                const leaveBadge = `<span class="status-pill ${statusClass}" style="cursor:pointer;" onclick="alert('${leaveTypeText}${timeRange}')" title="${leaveTypeText}${timeRange}">${leaveTypeText}</span>`;
+
+                if (record) {
+                    statusLabel = `${leaveBadge} <span style="font-weight:800; color:var(--text-sub); font-size:0.7rem;">+</span> <span class="status-pill status-present">${translations[currentLang].statusPresent}</span>`;
                 } else {
-                    statusLabel = `<span class="status-pill status-leave">${leaveTypeText}</span>`;
+                    statusLabel = leaveBadge;
                 }
             } else if (record) {
                 statusLabel = `<span class="status-pill status-present">${translations[currentLang].statusPresent}</span>`;
@@ -688,6 +700,8 @@ async function openEmployeeSettings(userId) {
     // ئامادەکردنی لیستی جۆرەکانی مۆڵەت بۆ ناو مۆداڵ
     const leaveTypes = [
         { key: 'hourlyLeave', text: translations[currentLang].hourlyLeave },
+        { key: 'mobileTeam', text: translations[currentLang].mobileTeam },
+        { key: 'workshop', text: translations[currentLang].workshop },
         { key: 'regularLeave', text: translations[currentLang].regularLeave },
         { key: 'sickLeave', text: translations[currentLang].sickLeave },
         { key: 'maternityLeave', text: translations[currentLang].maternityLeave },
@@ -930,7 +944,7 @@ function selectModalLeaveReason(event, key, text) {
     if (triggerText) triggerText.innerText = text;
     
     const timeInputs = document.getElementById('modalHourlyTimeInputs');
-    if (timeInputs) timeInputs.style.display = (key === 'hourlyLeave') ? 'flex' : 'none';
+    if (timeInputs) timeInputs.style.display = (key === 'hourlyLeave' || key === 'mobileTeam') ? 'flex' : 'none';
     
     document.getElementById('modalLeaveSelect').classList.remove('active');
 }
@@ -964,7 +978,7 @@ async function saveModalLeave(userId) {
         reason: selectedLeaveReasonInModal
     };
 
-    if (selectedLeaveReasonInModal === 'hourlyLeave') {
+    if (selectedLeaveReasonInModal === 'hourlyLeave' || selectedLeaveReasonInModal === 'mobileTeam') {
         leaveData.start_time = selectedLeaveStartTime;
         leaveData.end_time = selectedLeaveEndTime;
     }
@@ -1130,7 +1144,7 @@ function handlePrint() {
         if (isOnLeave) {
             const leaveTypeText = translations[currentLang][employeeLeave.reason] || employeeLeave.reason;
             statusText = leaveTypeText;
-            if (employeeLeave.reason === 'hourlyLeave') {
+            if (employeeLeave.reason === 'hourlyLeave' || employeeLeave.reason === 'mobileTeam') {
                 statusText += ` (${formatTime12(employeeLeave.start_time)} - ${formatTime12(employeeLeave.end_time)})`;
                 if (record) statusText += ` + ${t.statusPresent}`;
             }
