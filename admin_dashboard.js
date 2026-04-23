@@ -201,6 +201,28 @@ async function loadAttendanceData() {
     }
 }
 
+// فەنکشنی هەژمارکردنی ڕێژەی پابەندی (هەمان لۆجیکی داشبۆردی فەرمانبەر)
+function calculateComplianceScore(record) {
+    if (!record) return { total: 0 };
+    const baghdadTime = (date) => {
+        const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(new Date(date));
+        const h = parseInt(parts.find(p => p.type === 'hour').value);
+        const m = parseInt(parts.find(p => p.type === 'minute').value);
+        return h * 60 + m;
+    };
+    let inScore = 0;
+    let outScore = 0;
+    const totalInMinutes = baghdadTime(record.check_in_time);
+    if (totalInMinutes <= 510) inScore = 50;
+    else inScore = Math.max(0, 50 - (totalInMinutes - 510) * 0.5);
+    if (record.check_out_time) {
+        const totalOutMinutes = baghdadTime(record.check_out_time);
+        if (totalOutMinutes >= 870) outScore = 50;
+        else outScore = Math.max(0, 50 - (870 - totalOutMinutes) * 0.5);
+    }
+    return { total: Math.round(inScore + outScore) };
+}
+
 // فلتەرکردنی داتا بەبێ دووبارە بانگکردنەوەی داتابەیس
 function applyFiltersLocally() {
     const statusFilter = currentFilters.status;
@@ -224,40 +246,31 @@ function applyFiltersLocally() {
         }
 
         if (statusFilter === 'all') return true;
-        
+        if (statusFilter === 'lateIn') return isOnLeave;
+        if (statusFilter === 'justified') return hasJustification;
+
         if (record) {
             const checkInDate = new Date(record.check_in_time);
-            if (isNaN(checkInDate.getTime())) return false;
-
-            // دەرهێنانی کاتژمێر و خولەک بەپێی کاتی عێراق بۆ فلتەرکردن
-            const iraqHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(checkInDate));
+            const iraqHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric', hourCycle: 'h23' }).format(checkInDate));
             const iraqMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(checkInDate));
             const inTime = iraqHours * 60 + iraqMinutes;
             
-            const hasExit = record.check_out_time !== null;
-            
-            if (statusFilter === 'earlyIn') return inTime <= 540; // پێش ٩:٠٠
-            if (statusFilter === 'lateIn') return isOnLeave;    // ئێستا lateIn بەکاردێت بۆ فلتەری مۆڵەتەکان
+            if (statusFilter === 'earlyIn') return inTime <= 540;
             if (statusFilter === 'veryLateIn') return inTime > 540;
             
-            if (hasExit) {
+            if (record.check_out_time) {
                 const outDate = new Date(record.check_out_time);
-                if (isNaN(outDate.getTime())) return false;
-
-                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(outDate));
+                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric', hourCycle: 'h23' }).format(outDate));
                 const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(outDate));
                 const outTime = iraqOutHours * 60 + iraqOutMinutes;
-
                 if (statusFilter === 'earlyOut') return outTime < 870;
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else {
                 if (statusFilter === 'noExit') return true;
-            } // ئەگەر لە مۆڵەتدا بوو، ئەوا بە "نەهاتوو" ناژمێردرێت
+            }
         } else {
-            if (statusFilter === 'absent') return true;
+            if (statusFilter === 'absent') return !isOnLeave;
         }
-        
-        if (statusFilter === 'justified') return hasJustification;
         
         return false;
     });
@@ -473,6 +486,7 @@ function renderAttendance(attendance, employees) {
             <div><i class="fas fa-map-marked-alt header-icon"></i> ${translations[currentLang].colBranch}</div>
             <div><i class="fas fa-clock header-icon"></i> ${translations[currentLang].colTime}</div>
             <div><i class="fas fa-fingerprint header-icon"></i> ${translations[currentLang].colStatus}</div>
+            <div><i class="fas fa-chart-pie header-icon"></i> ${translations[currentLang].statusPresentt}</div>
             <div><i class="fas fa-tags header-icon"></i> ${translations[currentLang].colClass}</div>
             <div style="text-align: center;"><i class="fas fa-comment-dots header-icon"></i> ${translations[currentLang].colJust}</div>
         </div>
@@ -596,6 +610,24 @@ function renderAttendance(attendance, employees) {
                 statusLabel = `<span class="status-pill status-absent">${translations[currentLang].statusAbsent}</span>`;
             }
             
+            // هەژمارکردنی ڕێژەی پابەندی بۆ ئەمڕۆ
+            const { total } = calculateComplianceScore(record);
+            let complianceColor = 'compliance-poor';
+            let complianceIcon = 'fa-chart-line';
+            
+            if (total >= 85) {
+                complianceColor = 'compliance-excellent';
+                complianceIcon = 'fa-medal';
+            } else if (total >= 50) {
+                complianceColor = 'compliance-good';
+                complianceIcon = 'fa-chart-line';
+            }
+            
+            // ئەگەر مۆڵەتی هەبوو و ئامادەبوونی نەبوو، ڕێژەکە پشان مەدە (یان دەتوانیت بیکەیتە ١٠٠ ئەگەر پێت باش بێت)
+            const complianceDisplay = (isOnLeave && !record) 
+                ? `<span style="color:var(--text-sub); font-size:0.7rem; opacity:0.5;">-</span>` 
+                : `<span class="compliance-pill ${complianceColor}"><i class="fas ${complianceIcon}" style="font-size:0.6rem;"></i> ${total}%</span>`;
+            
            row.innerHTML = `
                 <div class="emp-name-col">
                     <span class="emp-name">${isOnDuty ? `<span class="on-duty-pulse" title="${translations[currentLang].onDuty}"></span>` : ''}${emp.full_name}</span>
@@ -606,6 +638,7 @@ function renderAttendance(attendance, employees) {
                     <span class="time-badge time-badge-out"><i class="fas fa-long-arrow-alt-up"></i> ${tOut}</span>
                 </div>
                 <div>${statusLabel}</div>
+                <div>${complianceDisplay}</div>
                 <div class="class-badge-col">
                     ${employeeClassifications.map(c => `
                         <span class="class-badge ${c.class}" title="${c.label}"><i class="${c.icon}"></i></span>
@@ -1108,24 +1141,20 @@ function handlePrint() {
         }
 
         if (statusFilter === 'all') return true;
-        
+        if (statusFilter === 'lateIn') return isOnLeave;
+        if (statusFilter === 'justified') return justificationsCache.some(j => j.user_id === emp.id);
         if (record) {
             const checkIn = new Date(record.check_in_time);
             const inTime = checkIn.getHours() * 60 + checkIn.getMinutes();
             if (statusFilter === 'earlyIn') return inTime <= 540;
-            if (statusFilter === 'lateIn') return isOnLeave;
             if (statusFilter === 'veryLateIn') return inTime > 540;
             if (record.check_out_time) {
                 const checkOut = new Date(record.check_out_time);
-                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(checkOut));
-                const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(checkOut));
-                const outTime = iraqOutHours * 60 + iraqOutMinutes;
-
+                const outTime = checkOut.getHours() * 60 + checkOut.getMinutes();
                 if (statusFilter === 'earlyOut') return outTime < 870;
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else if (statusFilter === 'noExit') return true;
         } else if (statusFilter === 'absent') return !isOnLeave;
-        if (statusFilter === 'justified') return justificationsCache.some(j => j.user_id === emp.id);
         return false;
     });
 
@@ -1265,28 +1294,25 @@ function handleExportExcel() {
             if (!isOnLeave || !currentFilters.leaveTypes.includes(employeeLeave.reason)) return false;
         }
         if (statusFilter === 'all') return true;
+        if (statusFilter === 'lateIn') return isOnLeave;
+        if (statusFilter === 'justified') return justificationsCache.some(j => j.user_id === emp.id);
         if (record) {
             const checkIn = new Date(record.check_in_time);
             const inTime = checkIn.getHours() * 60 + checkIn.getMinutes();
             if (statusFilter === 'earlyIn') return inTime <= 540;
-            if (statusFilter === 'lateIn') return isOnLeave;
             if (statusFilter === 'veryLateIn') return inTime > 540;
             if (record.check_out_time) {
                 const outDate = new Date(record.check_out_time);
-                const iraqOutHours = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric' }).format(outDate));
-                const iraqOutMinutes = parseInt(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', minute: 'numeric' }).format(outDate));
-                const outTime = iraqOutHours * 60 + iraqOutMinutes;
-
+                const outTime = outDate.getHours() * 60 + outDate.getMinutes();
                 if (statusFilter === 'earlyOut') return outTime < 870;
                 if (statusFilter === 'onTimeOut') return outTime >= 870;
             } else if (statusFilter === 'noExit') return true;
         } else if (statusFilter === 'absent') return !isOnLeave;
-        if (statusFilter === 'justified') return justificationsCache.some(j => j.user_id === emp.id);
         return false;
     });
 
     // دروستکردنی ناوەڕۆکی CSV
-    const headers = ["#", t.colName, t.colBranch, t.arrival, t.checkout, t.colStatus, t.colJust];
+    const headers = ["#", t.colName, t.colBranch, t.arrival, t.checkout, t.statusPresentt, t.colStatus, t.colJust];
     let csvContent = headers.join(",") + "\n";
 
     filteredStaff.forEach((emp, index) => {
@@ -1297,6 +1323,9 @@ function handleExportExcel() {
         const tIn = record ? formatTime12(record.check_in_time).replace(/\u200E/g, '') : '-';
         const tOut = record?.check_out_time ? formatTime12(record.check_out_time).replace(/\u200E/g, '') : '-';
         
+        const { total } = calculateComplianceScore(record);
+        const compliancePercent = (isOnLeave && !record) ? '-' : `${total}%`;
+
         let statusText = "";
         if (employeeLeave) {
             statusText = (translations[currentLang][employeeLeave.reason] || employeeLeave.reason) + (record ? ` + ${t.statusPresent}` : "");
@@ -1315,6 +1344,7 @@ function handleExportExcel() {
             `"${branchInfo}"`,
             `"${tIn}"`,
             `"${tOut}"`,
+            `"${compliancePercent}"`,
             `"${statusText}"`,
             `"${justText}"`
         ];

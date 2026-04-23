@@ -590,7 +590,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-header-row {
     display: grid;
-    grid-template-columns: 2fr 1.8fr 2fr 1.8fr 1.7fr 0.8fr; /* ڕێکخستنی پانتایی ستوونەکان بۆ کاتی ئاسۆیی */
+    grid-template-columns: 2fr 1.7fr 1.7fr 1.9fr 1.3fr 1.4fr 0.8fr; /* زیادکردنی ستوونی ڕێژە */
     padding: 6px 12px; /* کەمکردنەوەی بەرزی سەردێڕ */
     background: linear-gradient(to left, rgba(var(--primary-rgb), 0.08), transparent);
     border-bottom: 2px solid var(--primary); /* هێڵێکی تۆختر بۆ سەردێڕ */
@@ -614,7 +614,7 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 
 .attendance-item {
     display: grid;
-    grid-template-columns: 2fr 1.8fr 2fr 1.8fr 1.7fr 0.8fr; /* هاوتاکردن لەگەڵ سەردێڕەکە */
+    grid-template-columns: 2fr 1.7fr 1.7fr 1.9fr 1.3fr 1.4fr 0.8fr; /* هاوتاکردن لەگەڵ سەردێڕەکە */
     padding: 2px 12px; /* بۆشایی کەم و هاوسەنگ بۆ سەرەوە و خوارەوە */
     border-bottom: 1.2px solid var(--border-color) !important; /* بەکارهێنانی ڕەنگی بۆردەری سیستەم بۆ دیاربوون **/
     align-items: center;
@@ -1284,6 +1284,37 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
 .status-leave { background: rgba(255, 193, 7, 0.1); color: #ffc107; } /* ڕەنگی زەرد بۆ مۆڵەت */
 .status-mobile-team { background: rgba(20, 184, 166, 0.1); color: #14b8a6; }
 .status-workshop { background: rgba(99, 102, 241, 0.1); color: #6366f1; }
+
+.compliance-pill {
+    font-size: 0.7rem;
+    font-weight: 900;
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding: 3px 10px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    min-width: 55px;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.compliance-excellent {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+    border-color: rgba(34, 197, 94, 0.25);
+}
+.compliance-good {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+    border-color: rgba(245, 158, 11, 0.25);
+}
+.compliance-poor {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.25);
+}
 
 .loading-state {
     padding: 50px;

@@ -197,7 +197,8 @@ const translations = {
         complianceRate: "ڕێژەی پابەندی دەوام",
         dailyCompliance: "پابەندی ئەمڕۆ",
         arrivalCompliance: "پابەندی هاتن",
-        departureCompliance: "پابەندی دەرچوون"
+        departureCompliance: "پابەندی دەرچوون",
+        statusPresentt: "ڕێژەی پابەندی",
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -395,7 +396,8 @@ const translations = {
         complianceRate: "نسبة الالتزام بالدوام",
         dailyCompliance: "التزام اليوم",
         arrivalCompliance: "التزام الحضور",
-        departureCompliance: "التزام الانصراف"
+        departureCompliance: "التزام الانصراف",
+        statusPresentt: "نسبة الالتزام",
     }
 };
 
