@@ -228,6 +228,7 @@ async function checkAttendanceStatus() {
 
     if (data && data.length > 0) {
         const record = data[0];
+        updateComplianceUI(record);
         if (!record.check_out_time) {
             // هاتنی کردووە بەڵام دەرنەچووە
             toggleToCheckoutUI(record.check_in_time);
@@ -237,7 +238,81 @@ async function checkAttendanceStatus() {
             document.getElementById('checkoutBtn').style.display = 'none';
             updateStatus(translations[currentLang].dailyLimitReached, "success");
         }
+    } else {
+        updateComplianceUI(null); // ئەگەر تۆمار نەبوو (واتا دوای ١٢ی شەو یان سەرەتای ڕۆژ)، سفر دەبێتەوە
     }
+}
+
+function calculateComplianceScore(record) {
+    if (!record) return { total: 0, inPercent: 0, outPercent: 0 };
+
+    const baghdadTime = (date) => {
+        const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Baghdad', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(new Date(date));
+        const h = parseInt(parts.find(p => p.type === 'hour').value);
+        const m = parseInt(parts.find(p => p.type === 'minute').value);
+        return h * 60 + m;
+    };
+
+    let inScore = 0;
+    let outScore = 0;
+
+    const totalInMinutes = baghdadTime(record.check_in_time);
+    if (totalInMinutes <= 510) inScore = 50;
+    else inScore = Math.max(0, 50 - (totalInMinutes - 510) * 0.5);
+
+    if (record.check_out_time) {
+        const totalOutMinutes = baghdadTime(record.check_out_time);
+        if (totalOutMinutes >= 870) outScore = 50;
+        else outScore = Math.max(0, 50 - (870 - totalOutMinutes) * 0.5);
+    }
+
+    return {
+        total: Math.round(inScore + outScore),
+        inPercent: Math.round(inScore * 2),
+        outPercent: Math.round(outScore * 2)
+    };
+}
+
+function updateComplianceUI(record) {
+    const statusCard = document.querySelector('.status-card');
+    let card = document.getElementById('complianceCard');
+    
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'complianceCard';
+        card.className = 'compliance-card';
+        if (statusCard) statusCard.after(card);
+    }
+
+    const { total, inPercent, outPercent } = calculateComplianceScore(record);
+    
+    const getStatusClass = (percent) => {
+        if (percent >= 85) return { color: 'compliance-excellent', bar: 'bg-excellent' };
+        if (percent >= 50) return { color: 'compliance-good', bar: 'bg-good' };
+        return { color: 'compliance-poor', bar: 'bg-poor' };
+    };
+
+    const inStatus = getStatusClass(inPercent);
+    const outStatus = getStatusClass(outPercent);
+    const totalStatus = getStatusClass(total);
+
+    const t = translations[currentLang];
+    card.innerHTML = `
+        <div class="compliance-bars">
+            <div class="bar-item">
+                <div class="bar-label"><span>${t.arrivalCompliance}</span><span>${inPercent}%</span></div>
+                <div class="progress-bg"><div class="progress-fill ${inStatus.bar}" style="width: ${inPercent}%"></div></div>
+            </div>
+            <div class="bar-item">
+                <div class="bar-label"><span>${t.departureCompliance}</span><span>${outPercent}%</span></div>
+                <div class="progress-bg"><div class="progress-fill ${outStatus.bar}" style="width: ${outPercent}%"></div></div>
+            </div>
+        </div>
+        <div class="compliance-header">
+            <div class="compliance-title"><i class="fas fa-chart-line" style="font-size:0.55rem;"></i> ${t.dailyCompliance}</div>
+            <div class="total-percentage ${totalStatus.color}">${total}%</div>
+        </div>
+    `;
 }
 
 function toggleToCheckoutUI(checkInTime) {
@@ -1129,6 +1204,13 @@ async function showStaffDayDetails(record, dateStr, staffId) {
     
     // ١. پشکنین بۆ ئامادەبوون (Attendance)
     if (record) {
+        const { total, inPercent, outPercent } = calculateComplianceScore(record);
+        const getStatus = (p) => {
+            if (p >= 85) return 'compliance-excellent';
+            if (p >= 50) return 'compliance-good';
+            return 'compliance-poor';
+        };
+
         detailsHtml += `
             <div class="detail-text" style="border-right: 4px solid #22c55e; background: rgba(34, 197, 94, 0.05);">
                 <i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> 
@@ -1137,6 +1219,16 @@ async function showStaffDayDetails(record, dateStr, staffId) {
             <div class="detail-text" style="border-right: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
                 <i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> 
                 <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? formatTime12(record.check_out_time) : translations[currentLang].notRecorded}</b></div>
+            </div>
+            <div class="modal-compliance-box">
+                <div class="m-comp-header">
+                    <span class="m-comp-title">${translations[currentLang].dailyCompliance}</span>
+                    <span class="m-comp-value ${getStatus(total)}">${total}%</span>
+                </div>
+                <div class="m-comp-bars">
+                    <div class="m-bar"><div class="m-fill ${getStatus(inPercent).replace('compliance-', 'bg-')}" style="width:${inPercent}%"></div></div>
+                    <div class="m-bar"><div class="m-fill ${getStatus(outPercent).replace('compliance-', 'bg-')}" style="width:${outPercent}%"></div></div>
+                </div>
             </div>
         `;
     }
@@ -1390,6 +1482,11 @@ function showDayDetails(record, dateStr) {
     detailOut.style.display = 'none';
     detailIn.innerHTML = "";
     detailOut.innerHTML = "";
+
+    // سڕینەوەی کاردی ڕێژەی کۆن ئەگەر هەبێت بۆ ڕێگری لە دووبارەبوونەوە
+    const existingComp = modal.querySelector('.modal-compliance-box');
+    if (existingComp) existingComp.remove();
+
     // پاککردنەوەی ستایلی دیفۆڵت بۆ ئەوەی دیزاینەکە وەک هی بەڕێوەبەر بێت
     detailIn.style.background = "";
     detailIn.style.borderRight = "";
@@ -1401,8 +1498,32 @@ function showDayDetails(record, dateStr) {
     detailOut.style.alignItems = "center";
 
     if (record) {
+        const { total, inPercent, outPercent } = calculateComplianceScore(record);
+        const getStatus = (p) => {
+            if (p >= 85) return 'compliance-excellent';
+            if (p >= 50) return 'compliance-good';
+            return 'compliance-poor';
+        };
+
+        const complianceHtml = `
+            <div class="modal-compliance-box">
+                <div class="m-comp-header">
+                    <span class="m-comp-title">${translations[currentLang].dailyCompliance}</span>
+                    <span class="m-comp-value ${getStatus(total)}">${total}%</span>
+                </div>
+                <div class="m-comp-bars">
+                    <div class="m-bar"><div class="m-fill ${getStatus(inPercent).replace('compliance-', 'bg-')}" style="width:${inPercent}%"></div></div>
+                    <div class="m-bar"><div class="m-fill ${getStatus(outPercent).replace('compliance-', 'bg-')}" style="width:${outPercent}%"></div></div>
+                </div>
+            </div>
+        `;
+
         detailIn.style.display = 'flex';
         detailOut.style.display = 'flex';
+        
+        // سڕینەوەی هەر کاردێکی کۆن کە لە ناو مۆداڵەکەدایە بەرلە زیادکردنی نوێ
+        const existingBox = modal.querySelector('.modal-compliance-box');
+        if (existingBox) existingBox.remove();
 
         // جێگیرکردنی ستایلی ئامادەبوون (وەک هی بەڕێوەبەر)
         detailIn.style.borderRight = "4px solid #22c55e";
@@ -1413,6 +1534,8 @@ function showDayDetails(record, dateStr) {
         detailOut.style.borderRight = "4px solid #ef4444";
         detailOut.style.background = "rgba(239, 68, 68, 0.05)";
         detailOut.innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? formatTime12(record.check_out_time) : translations[currentLang].notRecorded}</b></div>`;
+        
+        detailOut.insertAdjacentHTML('afterend', complianceHtml);
     }
 
     if (isOnLeave) {

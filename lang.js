@@ -193,7 +193,11 @@ const translations = {
         after3pmOnly: "ئەم تایبەتمەندییە تەنها دوای کاتژمێر 3:00ی پاشنیوەڕۆ کارا دەبێت.",
         errorOldPass: "تکایە تێپەڕ ووشەی کۆن بنووسە",
         errorOldPassWrong: "تێپەڕ ووشەی کۆن هەڵەیە",
-        passChangedSuccess: "تێپەڕ ووشە بە سەرکەوتوویی گۆڕدرا"
+        passChangedSuccess: "تێپەڕ ووشە بە سەرکەوتوویی گۆڕدرا",
+        complianceRate: "ڕێژەی پابەندی دەوام",
+        dailyCompliance: "پابەندی ئەمڕۆ",
+        arrivalCompliance: "پابەندی هاتن",
+        departureCompliance: "پابەندی دەرچوون"
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -387,7 +391,11 @@ const translations = {
         after3pmOnly: "هذه الميزة متاحة فقط بعد الساعة 3:00 مساءً.",
         errorOldPass: "يرجى إدخال كلمة المرور القديمة",
         errorOldPassWrong: "كلمة المرور القديمة غير صحيحة",
-        passChangedSuccess: "تم تغيير كلمة المرور بنجاح"
+        passChangedSuccess: "تم تغيير كلمة المرور بنجاح",
+        complianceRate: "نسبة الالتزام بالدوام",
+        dailyCompliance: "التزام اليوم",
+        arrivalCompliance: "التزام الحضور",
+        departureCompliance: "التزام الانصراف"
     }
 };
 
