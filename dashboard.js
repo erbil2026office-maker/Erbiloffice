@@ -19,6 +19,7 @@ let locationAttempts = 0;
 let attemptTimer = null;
 let currentUser = null;
 let userProfile = null; // پاشەکەوتکردنی زانیاری پڕۆفایل و بنکە
+let isLocationSuitable = false; // مەرجی لۆکەیشن بۆ هەموو سیستمەکە
 let isDeviceVerified = false; // بۆ پشکنینی دۆخی ئامێرەکە بە گشتی
 let currentDetailDate = null; // بۆ هەڵگرتنی ڕێکەوتی ئەو ڕۆژەی کلیکی لێکراوە
 let staffAttendanceData = []; // داتای دەوامی فەرمانبەری هەڵبژێردراو
@@ -325,20 +326,10 @@ function startLiveClock() {
 
         // ئەگەر هێشتا چێک-ئینی نەکردبوو، دوگمەی هاتن پشکنینی کاتی بۆ دەکرێت
         if (inBtn && (!inInfo || inInfo.style.display === 'none')) {
-            inBtn.disabled = !isCheckInTimeAllowed();
+            refreshActionButtons();
         }
-
-        if (outBtn && inInfo && (inInfo.style.display === 'inline-flex' || inInfo.style.display === 'flex')) {
-            const isEarly = isBeforeCheckoutTimeLimit();
-            outBtn.disabled = isEarly;
-            // نیشاندانی دوگمەکە تەنها کاتێک چێک-ئین کراوە
-            outBtn.style.display = 'flex';
-            outBtn.style.justifyContent = 'center';
-            outBtn.style.alignItems = 'center';
-        } else if (outBtn) {
-            // شاردنەوەی دوگمەی دەرچوون ئەگەر هێشتا چێک-ئین نەکراوە
-            outBtn.style.display = 'none';
-        }
+        
+        refreshActionButtons();
     };
     
     update(); // یەکسەر نیشانی بدە
@@ -453,6 +444,24 @@ function updateComplianceUI(record) {
     `;
 }
 
+function refreshActionButtons() {
+    const inBtn = document.getElementById('checkinBtn');
+    const outBtn = document.getElementById('checkoutBtn');
+    const inInfo = document.getElementById('checkInInfo');
+    
+    const canProceed = isDeviceVerified && isLocationSuitable;
+
+    // ئەگەر لە دۆخی هاتن بێت (دوگمەی دەرچوون نییە)
+    if (inBtn && inBtn.style.display !== 'none') {
+        inBtn.disabled = !canProceed || !isCheckInTimeAllowed();
+    }
+
+    // ئەگەر لە دۆخی دەرچوون بێت
+    if (outBtn && outBtn.style.display !== 'none') {
+        outBtn.disabled = !canProceed || isBeforeCheckoutTimeLimit();
+    }
+}
+
 function toggleToCheckoutUI(checkInTime) {
     const checkinBtn = document.getElementById('checkinBtn');
     const checkoutBtn = document.getElementById('checkoutBtn');
@@ -464,8 +473,8 @@ function toggleToCheckoutUI(checkInTime) {
         checkoutBtn.style.display = 'flex';
         checkoutBtn.style.justifyContent = 'center';
         checkoutBtn.style.alignItems = 'center';
-        // ناچالاککردنی دوگمەکە ئەگەر کاتەکە زوو بێت، بەڵام بە دیارکراوی دەمێنێتەوە
-        checkoutBtn.disabled = isBeforeCheckoutTimeLimit();
+        // لێگەڕێ با refreshActionButtons دۆخی چالاکبوون دیاری بکات
+        refreshActionButtons();
     }
     
     // نیشاندانی کاتی هاتن
@@ -524,7 +533,7 @@ function startTracking() {
             const accuracy = Math.round(userPos.accuracy);
             const isAccurateEnough = accuracy <= 150; // GPS accuracy check
 
-            let isWithinGeofence = true; // Assume true if no branch or no geofence data
+            isLocationSuitable = isAccurateEnough;
 
             // Perform geofence check only if userProfile and branch data are available
             if (userProfile && userProfile.branches && userProfile.branches.latitude !== undefined && userProfile.branches.longitude !== undefined) {
@@ -533,27 +542,13 @@ function startTracking() {
                     userProfile.branches.latitude, userProfile.branches.longitude
                 );
                 const allowedRadius = userProfile.branches.accuracy || 150; // بەکارهێنانی ١٥٠ وەکFallback ئەگەر لە داتابەیس دیاری نەکرابوو
-                isWithinGeofence = distanceToBranch <= allowedRadius;
+                isLocationSuitable = isAccurateEnough && (distanceToBranch <= allowedRadius);
                 
                 // نیشاندانی تەنها دووری لە بنکە و شاردنەوەی سنووری ڕێپێدراو
                 document.getElementById('accuracyArea').innerText = `${translations[currentLang].distBranch}: ${Math.round(distanceToBranch)} مەتر`;
-            } else if (userProfile && !userProfile.branches) {
-                console.warn("Branch location data missing for user. Geofence check skipped.");
-                document.getElementById('accuracyArea').innerText = `${translations[currentLang].gpsAcc}: ${accuracy} m (${translations[currentLang].noBranch})`;
             }
-
-            // Determine overall location suitability
-            const isLocationSuitable = isAccurateEnough && isWithinGeofence;
-
-            // لێرە پشکنین بۆ هەردوو مەرجەکە دەکەین (لۆکەیشن + ئامێر)
-            const canProceed = isLocationSuitable && isDeviceVerified; // Both must be true
             
-            // نوێکردنەوەی دۆخی دوگمەکان
-            if (btn) btn.disabled = !canProceed || !isCheckInTimeAllowed();
-            if (outBtn && outBtn.style.display !== 'none') {
-                // دوگمەی دەرچوون تەنها کاتێک چالاک دەبێت کە لۆکەیشن دروست بێت و کاتەکە دوای ١١:٤٥ بێت
-                outBtn.disabled = !canProceed || isBeforeCheckoutTimeLimit();
-            }
+            refreshActionButtons();
 
             // Update text status for checkin button (if visible)
             if (txt && btn.style.display !== 'none') {
@@ -561,7 +556,7 @@ function startTracking() {
                     txt.innerText = translations[currentLang].invalidDevice;
                 } else if (!isAccurateEnough) {
                     txt.innerText = translations[currentLang].gpsWeak;
-                } else if (!isWithinGeofence) {
+                } else if (!isLocationSuitable) {
                     txt.innerText = translations[currentLang].notSuitable;
                 } else if (!isCheckInTimeAllowed()) {
                     // لۆکەیشن و ئامێر دروستن بەڵام کاتی هاتن نییە - نیشاندانی کاتی بەردەستبوون
@@ -578,7 +573,9 @@ function startTracking() {
             // Update verification UI
             if (isLocationSuitable) updateVerifyUI('location', true, null, translations[currentLang].suitable); // Location is fully suitable
             else if (!isAccurateEnough) updateVerifyUI('location', null, 'loading', translations[currentLang].gpsWeak); // GPS accuracy is the issue
-            else if (!isWithinGeofence) updateVerifyUI('location', false, null, translations[currentLang].notSuitable); // Outside geofence
+            else updateVerifyUI('location', false, null, translations[currentLang].notSuitable); // Outside geofence
+            
+            refreshActionButtons();
 
             // If location is suitable, we can clear the watch and timer for this attempt
             if (isLocationSuitable) {
@@ -796,7 +793,7 @@ async function processCheckIn() {
         return;
     }
 
-    if (!isAccurateEnough) {
+    if (!isLocationSuitable || !isAccurateEnough) {
         updateStatus(translations[currentLang].msgAccErr, "error");
         return;
     }
@@ -808,24 +805,14 @@ async function processCheckIn() {
     btn.disabled = true;
     txt.innerText = translations[currentLang].waitRecord;
 
-     const currentDevice = await getDeviceID();
-    let status = "on_time";
+    const currentDevice = await getDeviceID();
 
-    // ١. پشکنینی ئامێر
+    // پشکنینی توندی ئامێر پێش ناردن بۆ داتابەیس
     if (userProfile.device_id && userProfile.device_id !== currentDevice) {
-        status = "invalid_device";
-    }
-
-    // ٣. پشکنینی لۆکەیشن (ئەگەر بنکەکەی دیاریکرابوو)
-    if (userProfile.branches) {
-        const distance = calculateDistance(
-            userPos.latitude, userPos.longitude,
-            userProfile.branches.latitude, userProfile.branches.longitude
-        );
-        
-        if (distance > userProfile.branches.accuracy) {
-            status = "outside_location";
-        }
+        updateStatus(translations[currentLang].deviceTaken, "error");
+        btn.disabled = false;
+        txt.innerText = translations[currentLang].checkin;
+        return;
     }
 
     const { error } = await client.from('attendance').insert([{
@@ -834,7 +821,7 @@ async function processCheckIn() {
         portal_long: userPos.longitude,
         device_used: currentDevice,
         check_in_time: checkInTime,
-        status: status
+        status: "on_time"
     }]);
 
     if (error) {
@@ -1015,7 +1002,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         }
-
+        
+        refreshActionButtons();
         // نوێکردنەوەی ئایکۆنی بچووک بە تێکستی کورت
         updateVerifyUI('device', isDeviceVerified, null, deviceMsgShort);
 
