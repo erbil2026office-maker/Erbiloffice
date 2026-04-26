@@ -1572,3 +1572,113 @@ min-height: 80px; /* Ensure consistent height for both items */
         font-size: 0.85rem;
     }
 }
+
+/* --- Advanced Success Checkout Modal --- */
+.checkout-success-modal {
+    position: relative;
+    overflow: hidden;
+    padding: 0 !important;
+    border: none !important;
+    background: var(--card-bg) !important;
+}
+
+.success-visual-header {
+    height: 130px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.3);
+    top: -10%;
+    animation: confettiFall 3s infinite linear;
+}
+
+@keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0); opacity: 1; }
+    100% { transform: translateY(200px) rotate(720deg); opacity: 0; }
+}
+
+.check-circle-wrapper {
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 2;
+    animation: checkJump 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes checkJump {
+    0% { transform: scale(0); }
+    70% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.check-circle-wrapper i {
+    font-size: 2.2rem;
+    color: var(--primary);
+}
+
+.success-content-body {
+    padding: 20px 20px;
+    text-align: center;
+}
+
+.success-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.success-msg {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.modern-time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.time-card-modern {
+    background: var(--input-bg);
+    padding: 15px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s ease;
+}
+
+.time-card-modern:hover { transform: translateY(-3px); }
+
+.time-card-modern .t-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    font-size: 0.9rem;
+}
+
+.t-in { background: rgba(var(--primary-rgb), 0.15); color: var(--primary); }
+.t-out { background: rgba(220, 38, 38, 0.15); color: #b91c1c; }
+
+.time-card-modern .t-label { font-size: 0.65rem; font-weight: 700; color: var(--text-sub); display: block; margin-bottom: 2px; }
+.time-card-modern .t-value { font-size: 1.1rem; font-weight: 900; color: var(--text-main); font-family: 'Inter', sans-serif; }

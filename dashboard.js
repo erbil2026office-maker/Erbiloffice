@@ -563,7 +563,7 @@ function startTracking() {
                     const startStr = `\u200E${CHECKIN_START_HOUR}:${CHECKIN_START_MINUTE.toString().padStart(2, '0')} AM`;
                     const endStr = `\u200E${CHECKIN_END_HOUR === 12 ? 12 : CHECKIN_END_HOUR % 12}:${CHECKIN_END_MINUTE.toString().padStart(2, '0')} ${CHECKIN_END_HOUR >= 12 ? 'PM' : 'AM'}`;
                     txt.innerText = currentLang === 'ku' 
-                        ? `لە ${startStr} بۆ ${endStr} بەدروستە` 
+                        ? `لە ${startStr} بۆ ${endStr} بەردەستە` 
                         : `متاح من ${startStr} الی ${endStr}`;
                 } else {
                     txt.innerText = translations[currentLang].checkin;
@@ -876,6 +876,13 @@ async function processCheckOut() {
         return;
     }
 
+    const currentDevice = await getDeviceID();
+    // پشکنینی ئامێر پێش دەرچوون بۆ دڵنیابوونەوە لەوەی هەمان ئامێرە
+    if (userProfile.device_id && userProfile.device_id !== currentDevice) {
+        updateStatus(translations[currentLang].deviceTaken, "error");
+        return;
+    }
+
     // پشکنینی کۆتایی بۆ کاتی ڕێپێدراو (بۆ ڕێگری لە فێڵکردن یان دەستکاریکردنی کۆد)
     if (isBeforeCheckoutTimeLimit()) {
         const timeStr = `\u200E${CHECKOUT_HOUR_LIMIT}:${CHECKOUT_MINUTE_LIMIT.toString().padStart(2, '0')} AM`;
@@ -890,13 +897,15 @@ async function processCheckOut() {
     const originalHTML = btn.innerHTML; // Save original HTML before changing
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${translations[currentLang].waitRecord}`; // Show spinner
 
-    const { error } = await client
+    const { data, error } = await client
         .from('attendance')
         .update({ 
             check_out_time: new Date().toISOString()
         })
         .eq('user_id', currentUser.id)
-        .is('check_out_time', null);
+        .is('check_out_time', null)
+        .select('check_in_time, check_out_time')
+        .single();
 
     if (error) {
         console.error("Checkout DB Error:", error);
@@ -904,10 +913,64 @@ async function processCheckOut() {
         btn.disabled = false;
         btn.innerHTML = originalHTML;
     } else {
-        updateStatus(translations[currentLang].msgOutSuccess, "success");
+        showCheckoutSuccessModal(data.check_in_time, data.check_out_time);
         if (btn) btn.style.display = 'none';
         if (document.getElementById('checkInInfo')) document.getElementById('checkInInfo').style.display = 'none';
     }
+}
+
+function showCheckoutSuccessModal(inTime, outTime) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+
+    const t = translations[currentLang];
+
+    // دروستکردنی هەندێک شێوەی ڕەنگاوڕەنگی هەڕەمەکی بۆ ئەنیمەیشنی کۆنفێتی
+    let confettiHtml = '';
+    for (let i = 0; i < 12; i++) {
+        const left = Math.random() * 100;
+        const delay = Math.random() * 3;
+        confettiHtml += `<div class="confetti-piece" style="left:${left}%; animation-delay:${delay}s"></div>`;
+    }
+
+    modal.innerHTML = `
+        <div class="modal-window checkout-success-modal" style="max-width: 400px;">
+            <div class="success-visual-header">
+                ${confettiHtml}
+                <div class="check-circle-wrapper">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            <div class="success-content-body">
+                <h2 class="success-title">${t.checkoutSuccessTitle}</h2>
+                <p class="success-msg">${t.checkoutSuccessMsg}</p>
+
+                <div class="modern-time-grid">
+                    <div class="time-card-modern">
+                        <div class="t-icon t-in">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <span class="t-label">${t.yourCheckIn}</span>
+                        <span class="t-value">${formatTime12(inTime)}</span>
+                    </div>
+                    <div class="time-card-modern">
+                        <div class="t-icon t-out">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </div>
+                        <span class="t-label">${t.yourCheckOut}</span>
+                        <span class="t-value">${formatTime12(outTime)}</span>
+                    </div>
+                </div>
+
+                <button class="login-btn" onclick="location.reload()" 
+                        style="background: linear-gradient(135deg, var(--primary), var(--primary-hover)); box-shadow: 0 8px 15px rgba(var(--primary-rgb), 0.25);">
+                    <i class="fas fa-home"></i> ${t.close}
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 // --- ٦. کاتێک لاپەڕەکە بار دەبێت ---

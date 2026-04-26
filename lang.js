@@ -199,6 +199,10 @@ const translations = {
         arrivalCompliance: "پابەندی هاتن",
         departureCompliance: "پابەندی دەرچوون",
         statusPresentt: "ڕێژەی پابەندی",
+        checkoutSuccessTitle: "سوپاس بۆ ئەمڕۆ",
+        checkoutSuccessMsg: "کاتەکانی هاتن و دەرچوونت بە سەرکەوتوویی تۆمارکران.",
+        yourCheckIn: "کاتی هاتن",
+        yourCheckOut: "کاتی دەرچوون",
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -398,6 +402,10 @@ const translations = {
         arrivalCompliance: "التزام الحضور",
         departureCompliance: "التزام الانصراف",
         statusPresentt: "نسبة الالتزام",
+        checkoutSuccessTitle: "شكراً لالتزامك اليوم",
+        checkoutSuccessMsg: " تم تسجيل أوقات حضورك وانصرافك بنجاح.",
+        yourCheckIn: "وقت الحضور",
+        yourCheckOut: "وقت الانصراف",
     }
 };
 
