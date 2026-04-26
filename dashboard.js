@@ -109,23 +109,30 @@ async function getHardwareFingerprint() {
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     const canvasHash = isIOS ? 'ios-' + textWidth : canvas.toDataURL().substring(0, 100);
 
-    // ٢. کۆکردنەوەی سیفاتە فیزیکییە جێگیرەکان
+    // ٢. کۆکردنەوەی سیفاتە فیزیکییە جێگیرەکان (بۆ زیادکردنی Entropy)
     // لابردنی بەشە گۆڕاوەکانی UserAgent و بەکارهێنانی قەبارەی شاشەی جێگیر
     const uaClean = navigator.userAgent.replace(/Version\/.* Safari\/.*|Mobile\/.*|Standalone/g, '').trim();
     const screenStable = Math.min(screen.width, screen.height) + "x" + Math.max(screen.width, screen.height);
+    
+    // زانیاری زمانەوانی و ناوچەیی کە لە ئایفۆن جیاوازە
+    const localeInfo = [
+        Intl.DateTimeFormat().resolvedOptions().calendar,
+        Intl.DateTimeFormat().resolvedOptions().numberingSystem,
+        navigator.maxTouchPoints || '5'
+    ].join('-');
 
     const hardwareFeatures = [
         navigator.platform,
         navigator.language,
         screen.colorDepth,
         window.devicePixelRatio || 1,
-        webGLInfo, // زانیاری گرافیک کارد
+        webGLInfo,
+        localeInfo, // زیادکردنی وردەکاری دەست لێدان و ڕۆژژمێر
         navigator.hardwareConcurrency || '8',
         screenStable,
         uaClean,
         new Date().getTimezoneOffset(),
-        canvasHash,
-        audioHash // زیادکردنی پەنجەمۆری دەنگ بۆ گەیشتن بە ئەوپەڕی ووردکاری
+        canvasHash, audioHash
     ].join('|');
 
     let hash = 0;
@@ -141,19 +148,18 @@ async function getDeviceID() {
     try {
         // ١. پشکنین بکە ئایا پێشتر کۆدێکی تایبەت بۆ ئەم ئامێرە دروستکراوە؟
         let persistentSeed = localStorage.getItem('ihec_unique_seed');
-        
         if (!persistentSeed) {
-            // ئەگەر یەکەم جارە ئەپەکە دەکرێتەوە، کۆدێکی هەرەمەکی زۆر درێژ دروست بکە
-            persistentSeed = Math.random().toString(36).substring(2, 15) + 
-                             Math.random().toString(36).substring(2, 15) + 
-                             Date.now().toString(36);
+            // دروستکردنی کۆدێکی هەرەمەکی زۆر بەهێزتر
+            const array = new Uint32Array(4);
+            (window.crypto || window.msCrypto).getRandomValues(array);
+            persistentSeed = Array.from(array, dec => dec.toString(36)).join('') + Date.now().toString(36);
             localStorage.setItem('ihec_unique_seed', persistentSeed);
         }
 
         const hardwareFP = await getHardwareFingerprint();
         
         // ٢. تێکەڵکردنی پەنجەمۆری ڕەقەکاڵا لەگەڵ کۆدە تایبەتەکە
-        const finalID = hardwareFP + '-' + persistentSeed;
+        const finalID = `ihec-${hardwareFP}-${persistentSeed}`;
         localStorage.setItem('device_id', finalID);
         return finalID;
     } catch (e) {
@@ -857,19 +863,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 deviceMsgLong = translations[currentLang].deviceTaken;
             }
         } else {
-            if (!profile.device_id) {
+            if (!profile.device_id || profile.device_id.length < 10) {
                 // تۆمارکردنی ئامێری نوێ
-                const { error: regError } = await client.from('profiles').update({ device_id: hardwareFP }).eq('id', user.id);
+                // لێرە کێشە هەبوو: پێویستە currentDev بنێردرێت نەک تەنها hardwareFP
+                const { error: regError } = await client.from('profiles').update({ device_id: currentDev }).eq('id', user.id);
                 if (regError) {
                     console.error("Failed to register device:", regError);
                 } else {
                     isDeviceVerified = true;
                 }
             } else {
-                // حاڵەتی دووەم: فەرمانبەرەکە ئامێری تری هەیە و ئەمە هی ئەو نییە
-                isDeviceVerified = false;
-                deviceMsgShort = translations[currentLang].notPreviousDevice;
-                deviceMsgLong = translations[currentLang].notPreviousDevicelong;
+                // پشکنینی ئامێری تۆمارکراو لەگەڵ ئامێری ئێستا
+                if (profile.device_id === currentDev) {
+                    isDeviceVerified = true;
+                } else {
+                    isDeviceVerified = false;
+                    deviceMsgShort = translations[currentLang].notPreviousDevice;
+                    deviceMsgLong = translations[currentLang].notPreviousDevicelong;
+                }
             }
         }
 
