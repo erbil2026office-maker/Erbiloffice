@@ -82,31 +82,37 @@ async function getAudioFingerprint() {
 
 // --- دروستکردنی پەنجەمۆری ڕەقەکاڵا (Hardware Fingerprint) ---
 async function getHardwareFingerprint() {
-    const audioHash = await getAudioFingerprint();
-    // ١. دروستکردنی وێنەیەکی شووشەیی (Canvas) بۆ جیاکردنەوەی ووردتری GPU
+    let audioHash = 'no-audio';
+    try {
+        audioHash = await getAudioFingerprint();
+    } catch (e) { console.warn("Audio hash skipped"); }
+
+    // ١. دروستکردنی وێنەیەکی شووشەیی (Canvas)
+    // تێبینی: لە ئایفۆن (Safari) پشکنینی پیکسڵەکان جێگیر نییە و ژاوەژاو (Noise) دروست دەکات
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const txt = 'iHEC-Attendance-Check-Unique-ID-2024';
-    ctx.textBaseline = "top";
-    ctx.font = "14px 'Arial'";
-    ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = "#f60";
-    ctx.fillRect(125,1,62,20);
-    ctx.fillStyle = "#069";
-    ctx.fillText(txt, 2, 15);
-    ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
-    ctx.fillText(txt, 4, 17);
-    const canvasHash = canvas.toDataURL();
+    const txt = 'IHEC-ID-2024';
+    ctx.font = "16px Arial";
+    const textWidth = ctx.measureText(txt).width;
+    
+    // لە ئایفۆن تەنها سوود لە پێوانەی دەق وەردەگرین بۆ جێگیری، لە ئەندرۆید و دیسکتۆپ وێنەکە بەکاردێنین
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const canvasHash = isIOS ? 'ios-' + textWidth : canvas.toDataURL().substring(0, 100);
 
-    // ٢. کۆکردنەوەی سیفاتە فیزیکییەکانی تری ئامێر
+    // ٢. کۆکردنەوەی سیفاتە فیزیکییە جێگیرەکان
+    // لابردنی بەشە گۆڕاوەکانی UserAgent و بەکارهێنانی قەبارەی شاشەی جێگیر
+    const uaClean = navigator.userAgent.replace(/Version\/.* Safari\/.*|Mobile\/.*|Standalone/g, '').trim();
+    const screenStable = Math.min(screen.width, screen.height) + "x" + Math.max(screen.width, screen.height);
+
     const hardwareFeatures = [
-        navigator.userAgent,
-        screen.width + "x" + screen.height,
-        new Date().getTimezoneOffset(),
-        navigator.hardwareConcurrency || '8',
         navigator.platform,
         navigator.language,
         screen.colorDepth,
+        window.devicePixelRatio || 1,
+        navigator.hardwareConcurrency || '8',
+        screenStable,
+        uaClean,
+        new Date().getTimezoneOffset(),
         canvasHash,
         audioHash // زیادکردنی پەنجەمۆری دەنگ بۆ گەیشتن بە ئەوپەڕی ووردکاری
     ].join('|');
@@ -122,10 +128,14 @@ async function getHardwareFingerprint() {
 
 // --- بەڕێوەبردنی ئایدی ئامێر (Smart Device Manager) ---
 async function getDeviceID() {
-    const fingerprint = await getHardwareFingerprint();
-    // ناسنامەی ئامێر یەکسانە بە پەنجەمۆری ڕەقەکاڵاکە بەبێ گۆڕانکاری
-    localStorage.setItem('device_id', fingerprint);
-    return fingerprint;
+    try {
+        const fingerprint = await getHardwareFingerprint();
+        localStorage.setItem('device_id', fingerprint);
+        return fingerprint;
+    } catch (e) {
+        console.error("Storage error:", e);
+        return await getHardwareFingerprint(); // گەڕاندنەوەی فینگەرپرێنت تەنانەت ئەگەر ستۆرێجیش کاری نەکرد
+    }
 }
 
 // ئەژمارکردنی دووری نێوان دوو خاڵ بە مەتر (Haversine Formula)
@@ -825,8 +835,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             if (!profile.device_id) {
                 // تۆمارکردنی ئامێری نوێ
-                await client.from('profiles').update({ device_id: hardwareFP }).eq('id', user.id);
-                isDeviceVerified = true;
+                const { error: regError } = await client.from('profiles').update({ device_id: hardwareFP }).eq('id', user.id);
+                if (regError) {
+                    console.error("Failed to register device:", regError);
+                } else {
+                    isDeviceVerified = true;
+                }
             } else {
                 // حاڵەتی دووەم: فەرمانبەرەکە ئامێری تری هەیە و ئەمە هی ئەو نییە
                 isDeviceVerified = false;

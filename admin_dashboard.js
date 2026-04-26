@@ -512,8 +512,9 @@ function renderAttendance(attendance, employees) {
             const record = attendance.find(a => a.user_id === emp.id);
             const branch = emp.branches ? `${emp.branches.branch_id} | ${emp.branches.branch_name}` : "بێ بنکە";
             const row = document.createElement('div');
+            const isPresent = !!record; // ئایا هیچ تۆمارێکی ئامادەبوونی هەیە بۆ ئەمڕۆ؟
             const isOnDuty = record && !record.check_out_time;
-            row.className = `attendance-item ${isOnDuty ? 'on-duty-row' : ''}`;
+            row.className = `attendance-item ${isPresent ? 'on-duty-row' : ''}`;
             let employeeClassifications = []; // لیستێک بۆ کۆکردنەوەی هەموو پۆڵێنەکان
 
             const employeeLeave = leavesCache.find(l => 
