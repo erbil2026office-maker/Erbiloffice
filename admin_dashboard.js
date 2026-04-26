@@ -754,11 +754,12 @@ async function openEmployeeSettings(userId) {
 
     // وەرگێڕانەکان بۆ ناو تابەکان
     const tabGeneralText = translations[currentLang].empSettings;
+    const tabSecurityText = currentLang === 'ku' ? 'ئاساییش' : 'الأمان';
     const tabLeaveText = translations[currentLang].leaveManagementt;
     const tabCheckoutText = translations[currentLang].manualCheckoutTab;
 
     modal.innerHTML = `
-        <div class="modal-window compact-settings-modal" style="max-width:400px; padding:20px; border-radius:25px;">
+        <div class="modal-window compact-settings-modal" style="max-width:380px; padding:15px; border-radius:20px;">
             <div class="modal-header-compact">
                 <i class="fas fa-user-cog"></i>
                 <div>
@@ -767,8 +768,9 @@ async function openEmployeeSettings(userId) {
                 </div>
             </div>
 
-            <div class="settings-tabs">
+            <div class="settings-tabs" style="gap:4px; padding:4px; margin-bottom:12px;">
                 <button class="tab-btn active" onclick="switchSettingsTab(event, 'general-tab')"><i class="fas fa-id-card"></i> ${tabGeneralText}</button>
+                <button class="tab-btn" onclick="switchSettingsTab(event, 'email-tab')"><i class="fas fa-shield-halved"></i> ${tabSecurityText}</button>
                 <button class="tab-btn" onclick="switchSettingsTab(event, 'leave-tab')"><i class="fas fa-plane-departure"></i> ${tabLeaveText}</button>
                 <button class="tab-btn" onclick="switchSettingsTab(event, 'checkout-tab')"><i class="fas fa-sign-out-alt"></i> ${tabCheckoutText}</button>
             </div>
@@ -802,6 +804,29 @@ async function openEmployeeSettings(userId) {
                         <div class="options-list">${roleOptionsHtml}</div>
                     </div>
                 </div>
+                </div>
+            </div>
+
+            <div id="email-tab" class="tab-pane">
+                <div class="settings-group" style="padding:12px; border: 1px solid var(--border-color); background: var(--bg-color);">
+                    <div style="font-size: 0.62rem; color: var(--text-sub); margin-bottom: 10px; line-height: 1.4; background: rgba(var(--primary-rgb), 0.05); padding: 8px; border-radius: 10px; border-right: 3px solid var(--primary); text-align: right;">
+                        <i class="fas fa-info-circle" style="color: var(--primary); margin-left: 4px; font-size: 0.7rem;"></i>
+                        ${currentLang === 'ku' ? 'بۆ گۆڕینی ئیمەیڵی فەرمانبەر تکایە ئیمەیڵە نوێیەکە لە خوارەوە بنووسە. دوای گۆڕین، فەرمانبەر دەبێت بە ئیمەیڵە نوێیەکە لۆگین بێت.' : 'لتغيير البريد الرسمي والدخول، اكتب العنوان الجديد هنا. بعد التغيير، سيحتاج الموظف لتسجيل الدخول بالعنوان الجديد.'}
+                    </div>
+
+                    <div style="margin-bottom: 12px; padding: 8px; background: var(--input-bg); border-radius: 10px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-at" style="font-size: 0.75rem; color: var(--primary); opacity: 0.7;"></i>
+                        <div style="text-align: right; flex: 1;">
+                            <span style="font-size: 0.55rem; color: var(--text-sub); display: block; margin-bottom: 2px;">${currentLang === 'ku' ? 'ئیمەیڵی ئێستا:' : 'البريد الحالي:'}</span>
+                            <strong style="font-size: 0.8rem; color: var(--text-main); word-break: break-all; font-weight: 700;">${emp.email || '---'}</strong>
+                        </div>
+                    </div>
+
+                    <label class="settings-label" style="font-size:0.58rem; margin-bottom: 5px;"><i class="fas fa-pen-to-square"></i> ${currentLang === 'ku' ? 'ئیمەیڵی نوێ بنووسە' : 'اكتب البريد الجديد'}</label>
+                    <input type="email" id="newEmployeeEmail" class="glass-input" value="" placeholder="new-mail@example.com" style="margin-bottom:10px; height:34px; font-size:0.8rem; border-radius: 8px;">
+                    <button class="settings-save-btn" onclick="updateEmployeeEmail('${userId}')" style="height: 36px; margin-top: 0; font-size: 0.75rem; border-radius: 10px;">
+                        <i class="fas fa-save"></i> ${translations[currentLang].change}
+                    </button>
                 </div>
             </div>
 
@@ -1043,6 +1068,33 @@ async function updateEmployeeBranch(userId) {
                 loadAttendanceData();
                 document.getElementById('empSettingsModal').style.display = 'none';
             }
+        }
+    }
+}
+
+async function updateEmployeeEmail(userId) {
+    const newEmail = document.getElementById('newEmployeeEmail').value;
+    if (!newEmail || !newEmail.includes('@')) {
+        alert(currentLang === 'ku' ? 'تکایە ئیمەیڵێکی دروست بنووسە' : 'يرجى إدخال بريد إلكتروني صحيح');
+        return;
+    }
+
+    const confirmMsg = currentLang === 'ku' 
+        ? `ئایا دڵنیایت لە گۆڕینی ئیمەیڵی فەرمی و چوونەژوورەوە بۆ: ${newEmail}؟` 
+        : `هل أنت متأكد من تغيير البريد الرسمي والدخول إلى: ${newEmail}؟`;
+
+    if (confirm(confirmMsg)) {
+        // گۆڕین لە پڕۆفایل، تریگەرەکە خۆی بەشی لۆگین لە داتابەیس نوێ دەکاتەوە
+        const { error } = await adminClient.from('profiles').update({ email: newEmail }).eq('id', userId);
+        if (!error) {
+            alert(translations[currentLang].successUpdate);
+            // نوێکردنەوەی کاش بۆ ئەوەی یەکسەر دەربکەوێت
+            const emp = staffCache.find(s => s.id === userId);
+            if (emp) emp.email = newEmail;
+            loadAttendanceData();
+            document.getElementById('empSettingsModal').style.display = 'none';
+        } else {
+            alert("Error: " + error.message);
         }
     }
 }
