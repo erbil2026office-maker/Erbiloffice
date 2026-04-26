@@ -1,5 +1,16 @@
 // dashboard.js - Updated & Merged Version
 // بەکارهێنانی کڵایێنتە گشتییەکە کە لە script.js پێناسە کراوە
+
+// ڕێکخستنی کاتی ڕێپێدراو بۆ دەرچوون (بۆ نموونە ١١:٤٥)
+const CHECKOUT_HOUR_LIMIT = 11;
+const CHECKOUT_MINUTE_LIMIT = 45;
+
+// ڕێکخستنی کاتی ڕێپێدراو بۆ ئامادەبوون (بۆ نموونە 7:30 بەیانی تا 12:00 نیوەڕۆ)
+const CHECKIN_START_HOUR = 7;
+const CHECKIN_START_MINUTE = 30;
+const CHECKIN_END_HOUR = 12;
+const CHECKIN_END_MINUTE = 0;
+
 let client;
 
 let userPos = null;
@@ -44,6 +55,33 @@ function getTodayBounds(referenceDate = null) {
         start: `${iraqDate}T00:00:00+03:00`, 
         end: `${iraqDate}T23:59:59+03:00` 
     };
+}
+
+// فەنکشن بۆ پشکنینی ئەوەی ئایا کاتەکە پێش ١١:٤٥ی بەیانییە بە کاتی عێراق
+function isBeforeCheckoutTimeLimit() {
+    const parts = new Intl.DateTimeFormat('en-GB', { 
+        timeZone: 'Asia/Baghdad', 
+        hour: 'numeric', 
+        minute: 'numeric', 
+        hourCycle: 'h23' 
+    }).formatToParts(new Date());
+    const h = parseInt(parts.find(p => p.type === 'hour').value);
+    const m = parseInt(parts.find(p => p.type === 'minute').value);
+    return (h * 60 + m) < (CHECKOUT_HOUR_LIMIT * 60 + CHECKOUT_MINUTE_LIMIT);
+}
+
+// فەنکشن بۆ پشکنینی ئەوەی ئایا کاتەکە لە نێوان ٧:٣٠ بۆ ١٢:٠٠ی نیوەڕۆیە بە کاتی عێراق
+function isCheckInTimeAllowed() {
+    const parts = new Intl.DateTimeFormat('en-GB', { 
+        timeZone: 'Asia/Baghdad', 
+        hour: 'numeric', 
+        minute: 'numeric', 
+        hourCycle: 'h23' 
+    }).formatToParts(new Date());
+    const h = parseInt(parts.find(p => p.type === 'hour').value);
+    const m = parseInt(parts.find(p => p.type === 'minute').value);
+    const now = h * 60 + m;
+    return now >= (CHECKIN_START_HOUR * 60 + CHECKIN_START_MINUTE) && now < (CHECKIN_END_HOUR * 60 + CHECKIN_END_MINUTE);
 }
 
 // --- دروستکردنی پەنجەمۆری دەنگ (Audio Fingerprint) ---
@@ -279,6 +317,28 @@ function startLiveClock() {
             }
             dateElement.innerText = formattedDate;
         }
+
+        // بەڕێوەبردنی دۆخی دوگمەکان بە شێوەیەکی زیندوو
+        const inBtn = document.getElementById('checkinBtn');
+        const outBtn = document.getElementById('checkoutBtn');
+        const inInfo = document.getElementById('checkInInfo');
+
+        // ئەگەر هێشتا چێک-ئینی نەکردبوو، دوگمەی هاتن پشکنینی کاتی بۆ دەکرێت
+        if (inBtn && (!inInfo || inInfo.style.display === 'none')) {
+            inBtn.disabled = !isCheckInTimeAllowed();
+        }
+
+        if (outBtn && inInfo && (inInfo.style.display === 'inline-flex' || inInfo.style.display === 'flex')) {
+            const isEarly = isBeforeCheckoutTimeLimit();
+            outBtn.disabled = isEarly;
+            // نیشاندانی دوگمەکە تەنها کاتێک چێک-ئین کراوە
+            outBtn.style.display = 'flex';
+            outBtn.style.justifyContent = 'center';
+            outBtn.style.alignItems = 'center';
+        } else if (outBtn) {
+            // شاردنەوەی دوگمەی دەرچوون ئەگەر هێشتا چێک-ئین نەکراوە
+            outBtn.style.display = 'none';
+        }
     };
     
     update(); // یەکسەر نیشانی بدە
@@ -314,6 +374,10 @@ async function checkAttendanceStatus() {
         }
     } else {
         updateComplianceUI(null); // ئەگەر تۆمار نەبوو (واتا دوای ١٢ی شەو یان سەرەتای ڕۆژ)، سفر دەبێتەوە
+        // دڵنیابوونەوە لە شاردنەوەی دوگمە و زانیارییەکان کاتێک هیچ تۆمارێک نییە
+        if (document.getElementById('checkoutBtn')) document.getElementById('checkoutBtn').style.display = 'none';
+        if (document.getElementById('checkInInfo')) document.getElementById('checkInInfo').style.display = 'none';
+        if (document.getElementById('checkinBtn')) document.getElementById('checkinBtn').style.display = 'flex';
     }
 }
 
@@ -400,6 +464,8 @@ function toggleToCheckoutUI(checkInTime) {
         checkoutBtn.style.display = 'flex';
         checkoutBtn.style.justifyContent = 'center';
         checkoutBtn.style.alignItems = 'center';
+        // ناچالاککردنی دوگمەکە ئەگەر کاتەکە زوو بێت، بەڵام بە دیارکراوی دەمێنێتەوە
+        checkoutBtn.disabled = isBeforeCheckoutTimeLimit();
     }
     
     // نیشاندانی کاتی هاتن
@@ -482,19 +548,30 @@ function startTracking() {
             // لێرە پشکنین بۆ هەردوو مەرجەکە دەکەین (لۆکەیشن + ئامێر)
             const canProceed = isLocationSuitable && isDeviceVerified; // Both must be true
             
-            // Update button states
-            [btn, outBtn].forEach(b => { if(b) b.disabled = !canProceed; });
+            // نوێکردنەوەی دۆخی دوگمەکان
+            if (btn) btn.disabled = !canProceed || !isCheckInTimeAllowed();
+            if (outBtn && outBtn.style.display !== 'none') {
+                // دوگمەی دەرچوون تەنها کاتێک چالاک دەبێت کە لۆکەیشن دروست بێت و کاتەکە دوای ١١:٤٥ بێت
+                outBtn.disabled = !canProceed || isBeforeCheckoutTimeLimit();
+            }
 
             // Update text status for checkin button (if visible)
             if (txt && btn.style.display !== 'none') {
-                if (canProceed) {
-                    txt.innerText = translations[currentLang].checkin;
-                } else if (!isDeviceVerified) {
+                if (!isDeviceVerified) {
                     txt.innerText = translations[currentLang].invalidDevice;
                 } else if (!isAccurateEnough) {
                     txt.innerText = translations[currentLang].gpsWeak;
                 } else if (!isWithinGeofence) {
                     txt.innerText = translations[currentLang].notSuitable;
+                } else if (!isCheckInTimeAllowed()) {
+                    // لۆکەیشن و ئامێر دروستن بەڵام کاتی هاتن نییە - نیشاندانی کاتی بەردەستبوون
+                    const startStr = `\u200E${CHECKIN_START_HOUR}:${CHECKIN_START_MINUTE.toString().padStart(2, '0')} AM`;
+                    const endStr = `\u200E${CHECKIN_END_HOUR === 12 ? 12 : CHECKIN_END_HOUR % 12}:${CHECKIN_END_MINUTE.toString().padStart(2, '0')} ${CHECKIN_END_HOUR >= 12 ? 'PM' : 'AM'}`;
+                    txt.innerText = currentLang === 'ku' 
+                        ? `لە ${startStr} بۆ ${endStr} بەدروستە` 
+                        : `متاح من ${startStr} الی ${endStr}`;
+                } else {
+                    txt.innerText = translations[currentLang].checkin;
                 }
             }
 
@@ -653,6 +730,17 @@ async function processCheckIn() {
         return;
     }
 
+    // پشکنینی کۆتایی بۆ کاتی ڕێپێدراوی هاتن (بۆ ڕێگری لە دەستکاریکردنی کۆد)
+    if (!isCheckInTimeAllowed()) {
+        const startStr = `\u200E${CHECKIN_START_HOUR}:${CHECKIN_START_MINUTE.toString().padStart(2, '0')} AM`;
+        const endStr = `\u200E${CHECKIN_END_HOUR === 12 ? 12 : CHECKIN_END_HOUR % 12}:${CHECKIN_END_MINUTE.toString().padStart(2, '0')} ${CHECKIN_END_HOUR >= 12 ? 'PM' : 'AM'}`;
+        const msg = currentLang === 'ku' 
+            ? `تۆمارکردنی هاتن تەنها لە نێوان کاتژمێر ${startStr} بۆ ${endStr} ڕێپێدراوە.` 
+            : `تسجيل الحضور متاح فقط بين الساعة ${startStr} و ${endStr}.`;
+        updateStatus(msg, "error");
+        return;
+    }
+
     // پشکنین بۆ ئەوەی بزانین ئایا لەم ڕۆژەدا هیچ تۆمارێکی هەیە (هاتن یان دەرچوون)
     const { data: serverTime } = await client.rpc('get_server_time');
     const checkInTime = serverTime || new Date().toISOString();
@@ -798,6 +886,16 @@ async function processCheckOut() {
 
     if (!isAccurateEnough || !isWithinGeofence) {
         updateStatus(translations[currentLang].msgOutLocErr, "error");
+        return;
+    }
+
+    // پشکنینی کۆتایی بۆ کاتی ڕێپێدراو (بۆ ڕێگری لە فێڵکردن یان دەستکاریکردنی کۆد)
+    if (isBeforeCheckoutTimeLimit()) {
+        const timeStr = `\u200E${CHECKOUT_HOUR_LIMIT}:${CHECKOUT_MINUTE_LIMIT.toString().padStart(2, '0')} AM`;
+        const msg = currentLang === 'ku' 
+            ? `ناتوانیت دەرچوون تۆمار بکەیت پێش کاتژمێر ${timeStr}` 
+            : `لا يمكنك تسجيل الانصراف قبل الساعة ${timeStr}`;
+        updateStatus(msg, "error");
         return;
     }
 
