@@ -93,9 +93,24 @@ async function getHardwareFingerprint() {
         const gl = canvasGL.getContext('webgl') || canvasGL.getContext('experimental-webgl');
         if (gl) {
             const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
-            webGLInfo = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'no-debug';
+            // زیادکردنی زانیاری زۆر وردی کارتە گرافیکەکان کە لە مۆدێلێک بۆ مۆدێلێکی تر دەگۆڕێت
+            const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'no-debug';
+            const maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+            const maxRenderBufferSize = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+            webGLInfo = `${renderer}-${maxTextureSize}-${maxRenderBufferSize}`;
         }
     } catch (e) { webGLInfo = 'webgl-err'; }
+
+    // زیادکردنی تایبەتمەندییەکانی فۆنت (ئایفۆنەکان فۆنتی جیاوازیان لەسەرە بەپێی وەشانی iOS)
+    const fontCheck = () => {
+        const fontList = ['Arial', 'Helvetica', 'Times New Roman', 'Courier New', 'Palatino', 'Verdana'];
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        return fontList.map(f => {
+            ctx.font = `72px ${f}`;
+            return ctx.measureText('mmmmmmmmmmlli').width;
+        }).join('-');
+    };
 
     // ١. دروستکردنی وێنەیەکی شووشەیی (Canvas)
     // تێبینی: لە ئایفۆن (Safari) پشکنینی پیکسڵەکان جێگیر نییە و ژاوەژاو (Noise) دروست دەکات
@@ -107,28 +122,36 @@ async function getHardwareFingerprint() {
     
     // لە ئایفۆن تەنها سوود لە پێوانەی دەق وەردەگرین بۆ جێگیری، لە ئەندرۆید و دیسکتۆپ وێنەکە بەکاردێنین
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    const canvasHash = isIOS ? 'ios-' + textWidth : canvas.toDataURL().substring(0, 100);
+    const canvasHash = isIOS ? `ios-${textWidth}-${fontCheck()}` : canvas.toDataURL().substring(0, 100);
 
     // ٢. کۆکردنەوەی سیفاتە فیزیکییە جێگیرەکان (بۆ زیادکردنی Entropy)
     // لابردنی بەشە گۆڕاوەکانی UserAgent و بەکارهێنانی قەبارەی شاشەی جێگیر
     const uaClean = navigator.userAgent.replace(/Version\/.* Safari\/.*|Mobile\/.*|Standalone/g, '').trim();
-    const screenStable = Math.min(screen.width, screen.height) + "x" + Math.max(screen.width, screen.height);
+    const screenStable = [
+        Math.min(screen.width, screen.height),
+        Math.max(screen.width, screen.height),
+        screen.availWidth,
+        screen.availHeight,
+        screen.colorDepth,
+        window.devicePixelRatio || 1
+    ].join('x');
     
     // زانیاری زمانەوانی و ناوچەیی کە لە ئایفۆن جیاوازە
     const localeInfo = [
         Intl.DateTimeFormat().resolvedOptions().calendar,
         Intl.DateTimeFormat().resolvedOptions().numberingSystem,
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
         navigator.maxTouchPoints || '5'
     ].join('-');
 
     const hardwareFeatures = [
         navigator.platform,
         navigator.language,
-        screen.colorDepth,
-        window.devicePixelRatio || 1,
         webGLInfo,
         localeInfo, // زیادکردنی وردەکاری دەست لێدان و ڕۆژژمێر
+        navigator.doNotTrack || 'unspecified',
         navigator.hardwareConcurrency || '8',
+        navigator.deviceMemory || 'unknown', // تەنها لە ئەندرۆید
         screenStable,
         uaClean,
         new Date().getTimezoneOffset(),
@@ -146,20 +169,31 @@ async function getHardwareFingerprint() {
 // --- بەڕێوەبردنی ئایدی ئامێر (Smart Device Manager) ---
 async function getDeviceID() {
     try {
-        // ١. پشکنین بکە ئایا پێشتر کۆدێکی تایبەت بۆ ئەم ئامێرە دروستکراوە؟
+        // ١. هەوڵدان بۆ گەڕاندنەوەی Seed لە LocalStorage یان Cookie
         let persistentSeed = localStorage.getItem('ihec_unique_seed');
+        
+        // ئەگەر لە LocalStorage نەبوو، لە Cookie بگەڕێ (بۆ کاتی Clear Cache)
         if (!persistentSeed) {
-            // دروستکردنی کۆدێکی هەرەمەکی زۆر بەهێزتر
-            const array = new Uint32Array(4);
-            (window.crypto || window.msCrypto).getRandomValues(array);
-            persistentSeed = Array.from(array, dec => dec.toString(36)).join('') + Date.now().toString(36);
-            localStorage.setItem('ihec_unique_seed', persistentSeed);
+            const cookieMatch = document.cookie.match(/ihec_seed=([^;]+)/);
+            persistentSeed = cookieMatch ? cookieMatch[1] : null;
         }
+
+        if (!persistentSeed) {
+            // دروستکردنی کۆدێکی هەرەمەکی زۆر درێژ و تاقانە (Cryptographically Strong)
+            const array = new Uint32Array(8);
+            (window.crypto || window.msCrypto).getRandomValues(array);
+            const randomPart = Array.from(array, dec => dec.toString(36)).join('-');
+            persistentSeed = `seed-${randomPart}-${Date.now().toString(36)}`;
+        }
+
+        // پاشەکەوتکردنەوە لە هەردوو شوێنەکە بۆ دڵنیایی زیاتر
+        localStorage.setItem('ihec_unique_seed', persistentSeed);
+        document.cookie = `ihec_seed=${persistentSeed}; Max-Age=${60*60*24*365*10}; Path=/; SameSite=Lax`;
 
         const hardwareFP = await getHardwareFingerprint();
         
-        // ٢. تێکەڵکردنی پەنجەمۆری ڕەقەکاڵا لەگەڵ کۆدە تایبەتەکە
-        const finalID = `ihec-${hardwareFP}-${persistentSeed}`;
+        // ٢. دروستکردنی کۆدی کۆتایی (Hardware Hash + Unique Seed)
+        const finalID = `IHEC-DEVICE-${hardwareFP.toUpperCase()}-${persistentSeed.toUpperCase()}`;
         localStorage.setItem('device_id', finalID);
         return finalID;
     } catch (e) {
@@ -832,15 +866,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // گوێگرتن لە گۆڕینی زمان بۆ نوێکردنەوەی ڕۆڵ و بنکە بە شێوەیەکی داینامیکی
         window.addEventListener('languageChanged', renderProfileDisplay);
 
-       const hardwareFP = await getHardwareFingerprint();
         let currentDev = await getDeviceID();
 
-        // ١. گەڕان بەدوای خاوەنی ئەم ئامێرە (ڕەقەکاڵایە) لەناو هەموو پڕۆفایلەکان
+       // ١. پشکنین بکە ئایا ئەم ئایدییە تاقانەیە (Hardware + Seed) پێشتر لای کەسێکی تر تۆمار کراوە؟
         const { data: deviceOwner, error: deviceError } = await client
             .from('profiles')
             .select('id, full_name, device_id')
             .not('device_id', 'is', null)
-            .eq('device_id', hardwareFP) // پشکنینی وورد و یەکسان بۆ ناسنامەی ئامێر
+            .eq('device_id', currentDev) // پشکنینی ئایدییە تەواوەکە
             .maybeSingle(); // یەکەم کەس دەهێنێت کە ئەم ئامێرەی تۆمار کردبێت
 
         if (deviceError) {
@@ -854,8 +887,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         let deviceMsgLong = "";
 
         if (deviceOwner) {
-            // ئەگەر ئامێرەکە پێشتر لای ئەم کەسە بووە، یان کۆدەکە وەشانێکی کۆنترە بەڵام هەر هی ئەمە
-            if (deviceOwner.id === user.id || profile.device_id === hardwareFP) {
+           // ئەگەر ئامێرەکە پێشتر لای ئەم کەسە تۆمارکراوە
+            if (deviceOwner.id === user.id) {
                 isDeviceVerified = true;
             } else {
                 // حاڵەتی یەکەم: ئامێرەکە پێشتر لای کەسێکی تر تۆمار کراوە
@@ -864,8 +897,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 deviceMsgLong = translations[currentLang].deviceTaken;
             }
         } else {
-            // ئەگەر هیچ ئایدییەک نەبوو، یان ئایدییەکە بە شێوازە کۆنەکە بوو (بێ ihec-)
-            if (!profile.device_id || !profile.device_id.startsWith('ihec-')) {
+             // ئەگەر فەرمانبەرەکە ئایدی تۆمارکراوی نییە، یان ئایدییەکەی شێوازە کۆنەکەیە
+            if (!profile.device_id || !profile.device_id.startsWith('IHEC-DEVICE-')) {
                 // ئەپدەیتکردن یان تۆمارکردنی ئامێر بۆ وەشانی نوێی جێگیر
                 const { error: regError } = await client.from('profiles').update({ device_id: currentDev }).eq('id', user.id);
                 if (regError) {
