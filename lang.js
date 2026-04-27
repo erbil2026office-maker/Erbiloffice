@@ -203,6 +203,8 @@ const translations = {
         checkoutSuccessMsg: "کاتەکانی هاتن و دەرچوونت بە سەرکەوتوویی تۆمارکران.",
         yourCheckIn: "کاتی هاتن",
         yourCheckOut: "کاتی دەرچوون",
+        yourCheckInn: "هاتن",
+        yourCheckOutt: "دەرچوون",
     },
     ar: {
         title: "ERBIL OFFICE - IHEC",
@@ -406,6 +408,8 @@ const translations = {
         checkoutSuccessMsg: " تم تسجيل أوقات حضورك وانصرافك بنجاح.",
         yourCheckIn: "وقت الحضور",
         yourCheckOut: "وقت الانصراف",
+        yourCheckInn: "الحضور",
+        yourCheckOutt: "الانصراف",
     }
 };
 

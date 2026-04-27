@@ -605,6 +605,30 @@ input[type="date"]:focus::-webkit-calendar-picker-indicator {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
+.sortable-time-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sort-trigger {
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sort-trigger:hover {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-hover);
+}
+
+.sort-icon-passive { opacity: 0.3; font-size: 0.6rem; }
+.sort-icon-active { color: var(--primary); font-size: 0.7rem; }
+
 .header-icon {
     margin-left: 5px;
     font-size: 0.8rem;

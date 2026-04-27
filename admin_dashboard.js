@@ -25,6 +25,11 @@ let currentFilters = {
     status: 'all'
 };
 
+let currentSort = {
+    column: null, // 'check_in_time' یان 'check_out_time'
+    direction: 'asc' // 'asc' یان 'desc'
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
     // وەرگرتنی کڵایێنتەکە لە ویندۆوە بۆ ڕێگری لە ReferenceError
     adminClient = window.supabaseClient || supabaseClient;
@@ -443,14 +448,53 @@ function toggleAdminsMobile() {
     }
 }
 
+function toggleSort(column) {
+    if (currentSort.column === column) {
+        currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.column = column;
+        currentSort.direction = 'asc';
+    }
+    applyFiltersLocally();
+}
+
+function getSortIcon(column) {
+    if (currentSort.column !== column) {
+        return '<i class="fas fa-sort sort-icon-passive"></i>';
+    }
+    return currentSort.direction === 'asc' 
+        ? '<i class="fas fa-sort-up sort-icon-active"></i>' 
+        : '<i class="fas fa-sort-down sort-icon-active"></i>';
+}
+
 function renderAttendance(attendance, employees) {
     const listDiv = document.getElementById('attendanceList');
     const sectionTitle = document.querySelector('.attendance-container .section-title');
     
-    // ١. ڕیزکردنی فەرمانبەران: ئەو کەسانەی چێک-ئینیان کردووە و دەرنەچوون دێنە سەرەوەی لیستەکە
     const selectedDateStr = document.getElementById('datePicker').value;
-
     const langCode = currentLang === 'ku' ? 'ku' : 'ar';
+
+    // لۆجیکی سۆرتکردنی داینامیکی
+    if (currentSort.column) {
+        employees.sort((a, b) => {
+            const recA = attendance.find(r => r.user_id === a.id);
+            const recB = attendance.find(r => r.user_id === b.id);
+            
+            let valA = recA ? recA[currentSort.column] : null;
+            let valB = recB ? recB[currentSort.column] : null;
+
+            // ئەگەر کاتەکە نەبوو، بیخە کۆتایی لیستەکە
+            if (valA === null && valB === null) return 0;
+            if (valA === null) return 1;
+            if (valB === null) return -1;
+
+            const timeA = new Date(valA).getTime();
+            const timeB = new Date(valB).getTime();
+
+            return currentSort.direction === 'asc' ? timeA - timeB : timeB - timeA;
+        });
+    } else {
+        // ڕیزکردنی دیفۆڵت ئەگەر سۆرت دانەگیرابوو
     employees.sort((a, b) => {
         const recA = attendance.find(r => r.user_id === a.id);
         const recB = attendance.find(r => r.user_id === b.id);
@@ -464,6 +508,7 @@ function renderAttendance(attendance, employees) {
         if (onLeaveA !== onLeaveB) return onLeaveB - onLeaveA; // پاشان ئەوانەی لە مۆڵەتن
         return a.full_name.localeCompare(b.full_name, langCode); // پاشان بەپێی ناو
     });
+    }
 
     // ٢. هەژمارکردنی ئەو کەسانەی کە ئێستا لە دەوامدان بۆ نیشاندان لە باجەکەدا
     const onDutyCount = employees.filter(emp => {
@@ -484,7 +529,11 @@ function renderAttendance(attendance, employees) {
         <div class="attendance-header-row">
             <div><i class="fas fa-user-circle header-icon"></i> ${translations[currentLang].colName}</div>
             <div><i class="fas fa-map-marked-alt header-icon"></i> ${translations[currentLang].colBranch}</div>
-            <div><i class="fas fa-clock header-icon"></i> ${translations[currentLang].colTime}</div>
+            <div class="sortable-time-header">
+                <span class="sort-trigger" onclick="toggleSort('check_in_time')">${translations[currentLang].yourCheckInn} ${getSortIcon('check_in_time')}</span>
+                <span class="sep">/</span>
+                <span class="sort-trigger" onclick="toggleSort('check_out_time')">${translations[currentLang].yourCheckOutt} ${getSortIcon('check_out_time')}</span>
+            </div>
             <div><i class="fas fa-fingerprint header-icon"></i> ${translations[currentLang].colStatus}</div>
             <div><i class="fas fa-chart-pie header-icon"></i> ${translations[currentLang].statusPresentt}</div>
             <div><i class="fas fa-tags header-icon"></i> ${translations[currentLang].colClass}</div>

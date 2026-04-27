@@ -1760,12 +1760,12 @@ function showDayDetails(record, dateStr) {
         // جێگیرکردنی ستایلی ئامادەبوون (وەک هی بەڕێوەبەر)
         detailIn.style.borderRight = "4px solid #22c55e";
         detailIn.style.background = "rgba(34, 197, 94, 0.05)";
-        detailIn.innerHTML = `<i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> <div>${translations[currentLang].arrival}: <b>${formatTime12(record.check_in_time)}</b></div>`;
+        detailIn.innerHTML = `<i class="fas fa-sign-in-alt" style="color: #22c55e;"></i> <div>${translations[currentLang].yourCheckIn}: <b>${formatTime12(record.check_in_time)}</b></div>`;
 
         // جێگیرکردنی ستایلی دەرچوون (وەک هی بەڕێوەبەر)
         detailOut.style.borderRight = "4px solid #ef4444";
         detailOut.style.background = "rgba(239, 68, 68, 0.05)";
-        detailOut.innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> <div>${translations[currentLang].checkout}: <b>${record.check_out_time ? formatTime12(record.check_out_time) : translations[currentLang].notRecorded}</b></div>`;
+        detailOut.innerHTML = `<i class="fas fa-sign-out-alt" style="color: #ef4444;"></i> <div>${translations[currentLang].yourCheckOut}: <b>${record.check_out_time ? formatTime12(record.check_out_time) : translations[currentLang].notRecorded}</b></div>`;
         
         detailOut.insertAdjacentHTML('afterend', complianceHtml);
     }
