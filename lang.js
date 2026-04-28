@@ -205,7 +205,7 @@ const translations = {
         yourCheckOut: "کاتی دەرچوون",
         yourCheckInn: "هاتن",
         yourCheckOutt: "دەرچوون",
-        forgotPass: "تێپەڕەوشەم بیرچووە؟",
+        forgotPass: "ووشەی نهێنیت لە بیر چووە؟",
         resetPass: "ڕیسێتکردنی تێپەڕەوشە",
         enterEmail: "ئیمەیڵەکەت بنووسە",
         sendCode: "ناردنی کۆد",
